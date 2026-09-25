@@ -1,0 +1,12 @@
+{
+  "parts": [
+    "evals/public-pool-2k/train.jsonl",
+    "evals/delta-v1/train.jsonl"
+  ],
+  "files": {
+    "train.jsonl": {
+      "sha256": "6e4b26c208ae022a4eec7fdf9c8b84dbad377e9f4dd189aedd9a80b2f1a6bfbb",
+      "records": 23725
+    }
+  }
+}
