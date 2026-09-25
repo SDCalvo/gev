@@ -1,0 +1,30 @@
+{
+  "seed": "dates-v2-20260925",
+  "files": {
+    "dates.jsonl": {
+      "records": 1800,
+      "dropped_eval_overlap": 0,
+      "sha256": "d0fb55bb5177b1bad89530abab17f7161695e5b4310ff9b9ee638fc454b3f77d",
+      "sources": [
+        "night2_dates"
+      ]
+    },
+    "unknowable.jsonl": {
+      "records": 900,
+      "dropped_eval_overlap": 0,
+      "sha256": "d021c2dba3c4a8beabf0d2c2be085f9cfb43539841c91c5ccb93d3376ff9c645",
+      "sources": [
+        "night2_unknowable",
+        "night2_unknowable_control"
+      ]
+    },
+    "assertion.jsonl": {
+      "records": 400,
+      "dropped_eval_overlap": 0,
+      "sha256": "f7f5832b007a1cc3ab3a1064dc6d09a788d46174a947e7e8c2e0766267f618ab",
+      "sources": [
+        "night2_assertion"
+      ]
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "seed": "delta-v2-20260925",
+  "sources": {
+    "openbookqa": 1000,
+    "arc": 1000,
+    "csqa": 1000,
+    "qqp": 1200,
+    "mrpc": 800,
+    "compositional": 3200,
+    "legacy_policy": 540,
+    "night2_dates": 1800,
+    "night2_unknowable": 450,
+    "night2_unknowable_control": 450,
+    "night2_assertion": 400
+  },
+  "files": {
+    "train.jsonl": {
+      "sha256": "997b5ceaa7abc2a7b1530491c92a0ccfbccd72949d94cb7f5b28c73056837520",
+      "records": 11840
+    }
+  }
+}
