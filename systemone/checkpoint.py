@@ -47,6 +47,8 @@ class Meta:
     base_revision: str | None = None
     lora: int = 0
     head_dim: int = 256
+    head_norm: bool = False          # PointerHead(norm=...); False for checkpoints written before the option existed
+    readout: str = "delimiter"       # model.encode(readout=...); "delimiter" for checkpoints written before the option existed
     option_isolation: bool = False
     special_embeddings: bool = False
     weights_dtype: str = "fp32"
@@ -54,7 +56,7 @@ class Meta:
     holdout: list = field(default_factory=list)
     extra: dict = field(default_factory=dict)
 
-    KNOWN = ("base", "head", "base_revision", "lora", "head_dim", "option_isolation", "special_embeddings", "weights_dtype", "temperature", "holdout")
+    KNOWN = ("base", "head", "base_revision", "lora", "head_dim", "head_norm", "readout", "option_isolation", "special_embeddings", "weights_dtype", "temperature", "holdout")
 
     @classmethod
     def from_dict(cls, d):
@@ -162,7 +164,7 @@ class Checkpoint:
             # the same way and keep the fp32 adapter unmerged rather than folding it into bf16 weights.
             dtype, merge = torch.bfloat16, False
         merge = merge and not self.adapter_config().get("trainable_token_indices")   # token-trained adapters stay unmerged
-        m = DecisionModel(meta.base, tok, device, lora=None, revision=meta.base_revision, head_dim=meta.head_dim,
+        m = DecisionModel(meta.base, tok, device, lora=None, revision=meta.base_revision, head_dim=meta.head_dim, head_norm=meta.head_norm, readout=meta.readout,
                           option_isolation=meta.option_isolation, dtype=torch.float32 if merge else dtype, attn=opts.attn)
         m.lm = PeftModel.from_pretrained(m.lm, self.path, torch_device=str(device)).to(device)   # trainable token embeddings, if any, live in the adapter
         if opts.lora_scale != 1:
@@ -174,7 +176,7 @@ class Checkpoint:
         if dtype != torch.float32: m.lm = m.lm.to(dtype)
         return m
 
-    COMPAT_FIELDS = ("base", "base_revision", "lora", "head_dim", "option_isolation", "special_embeddings")
+    COMPAT_FIELDS = ("base", "base_revision", "lora", "head_dim", "head_norm", "readout", "option_isolation", "special_embeddings")
 
     def warm_start(self, model, ours):
         """Delta training: load this checkpoint's adapter and pointer head into `model` (a fresh DecisionModel built with

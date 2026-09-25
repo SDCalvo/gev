@@ -225,6 +225,8 @@ def parse_args():
     ap.add_argument("--option_isolation", type=int, choices=[0, 1], default=0, help="option spans are isolated sub-branches with shared positions (exact permutation invariance)")
     ap.add_argument("--special_embeddings", type=int, choices=[0, 1], default=0, help="also train the embeddings of the 5 delimiter tokens")
     ap.add_argument("--head_dim", type=int, default=256, help="pointer head dimension")
+    ap.add_argument("--readout", choices=["delimiter", "content"], default="delimiter", help="token the pointer head reads per option (model.encode): the </opt> delimiter (Kev, for Qwen bases) or the last option-content token (Gemma bases)")
+    ap.add_argument("--head_norm", type=int, choices=[0, 1], default=1, help="layer-normalize the hidden states the pointer head reads (PointerHead.norm); required on Gemma 4, whose hidden norms are in the hundreds")
     ap.add_argument("--lora_targets", choices=["all", "dense", "attn", "qv"], default="all", help="LoRA module set; fewer modules = less drift from the base; dense = all minus the DeltaNet projections on hybrid bases")
     ap.add_argument("--base_revision", default="", help="pin the base commit when the suite manifest does not pin this base")
     ap.add_argument("--p_none", type=float, default=0.1)
@@ -292,14 +294,14 @@ def main():
     anchor_sources = set(a.anchor_sources.split(",")) if a.anchor_sources else None
 
     tok = load_tokenizer(a.base, revision=revision)
-    model = DecisionModel(a.base, tok, dev, lora=a.lora, revision=revision, head_dim=a.head_dim, lora_targets=a.lora_targets,
+    model = DecisionModel(a.base, tok, dev, lora=a.lora, revision=revision, head_dim=a.head_dim, head_norm=bool(a.head_norm), readout=a.readout, lora_targets=a.lora_targets,
                           option_isolation=bool(a.option_isolation), special_embeddings=bool(a.special_embeddings),
                           dtype=torch.bfloat16 if a.weights_dtype == "bf16" else torch.float32)
     if a.checkpointing:
         model.lm.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
     model.lm.config.use_cache = False
     # what this run will save as head.pt; also the architecture a warm start must match
-    meta = Meta(base=a.base, base_revision=revision, lora=a.lora, head_dim=a.head_dim, option_isolation=bool(a.option_isolation),
+    meta = Meta(base=a.base, base_revision=revision, lora=a.lora, head_dim=a.head_dim, head_norm=bool(a.head_norm), readout=a.readout, option_isolation=bool(a.option_isolation),
                 special_embeddings=bool(a.special_embeddings), weights_dtype=a.weights_dtype, holdout=holdout)
     init_source = None
     if a.init_from:

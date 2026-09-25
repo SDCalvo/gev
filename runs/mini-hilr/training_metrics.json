@@ -1,0 +1,14 @@
+{
+  "wall_seconds": 371.30992889404297,
+  "records_seen": 400,
+  "requested_records": 400,
+  "truncated_records": 0,
+  "rejected_records": 0,
+  "optimizer_steps": 50,
+  "forward_tokens": 56519,
+  "peak_device_bytes": 15883409152,
+  "device": "mps",
+  "dtype": "fp32",
+  "batch": 1,
+  "peak_rss_bytes": 6582616064
+}

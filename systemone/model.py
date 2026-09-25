@@ -121,12 +121,22 @@ def user_tokens(tok, text):
 OPT_NONE, OPT_DECIDE = -1, -2   # values of enc["opt"]: instruction/state tokens, and the <decide> token
 
 
-def encode(tok, rec, max_state=MAX_STATE, max_branch=MAX_BRANCH, strict=False, option_isolation=False):
+READOUTS = ("delimiter", "content")
+
+
+def encode(tok, rec, max_state=MAX_STATE, max_branch=MAX_BRANCH, strict=False, option_isolation=False, readout="delimiter"):
     """Pack one record: [<state> ...] then per-question [<q> instr <opt> o </opt>... <decide>].
 
     Returns ids, seg (0 = state, k = question k), pos (branch positions restart after state),
-    decide_idx [Q], opt_idx [Q][K] (index of </opt> token for each option), opt (per-token option index within its
-    question: OPT_NONE for state/instruction, 0..K-1 for option spans, OPT_DECIDE for <decide>).
+    decide_idx [Q], opt_idx [Q][K] (the token the pointer head reads for each option), opt (per-token option index
+    within its question: OPT_NONE for state/instruction, 0..K-1 for option spans, OPT_DECIDE for <decide>).
+
+    readout: which token of each option span the head reads. "delimiter" = its </opt> token (Kev's choice: Qwen's
+    delimiters are pretrained FIM tokens whose states summarize the span). "content" = the last token of the option
+    text (the </opt> token when the text is empty). On Gemma 4 the delimiters are never-pretrained <unusedN> tokens and
+    their final-layer states barely identify the option they follow (nearest-neighbour accuracy across option orders
+    0.05 on Banking77 against chance 0.013), while the last content token's do (0.29): the first Gemma pilots trained
+    on the delimiter readout stayed at chance on every Choice source.
 
     option_isolation=True: every option span is its own sub-branch (it sees state + instruction + itself only), all
     option spans share the same position ids, and <decide> sits at one fixed position after the longest span. Then the
@@ -153,12 +163,13 @@ def encode(tok, rec, max_state=MAX_STATE, max_branch=MAX_BRANCH, strict=False, o
             br_pos = list(range(p0, p0 + len(instr))) + [p0 + len(instr) + i for sp in spans for i in range(len(sp))] + [p0 + len(instr) + longest]
         else:
             br_pos = list(range(p0, p0 + len(br)))
+        if readout not in READOUTS: raise ValueError(f"readout must be one of {READOUTS}")
         ends, cursor = [], len(instr)
         for sp in spans:
-            cursor += len(sp); ends.append(cursor - 1)
+            cursor += len(sp); ends.append(cursor - 1 - (1 if readout == "content" and len(sp) > 2 else 0))
         ids += br; seg += [k] * len(br); pos += br_pos; opt += br_opt
         decide_idx.append(base + len(br) - 1); opt_idx.append([base + e for e in ends])
-    return {"ids": ids, "seg": seg, "pos": pos, "opt": opt, "option_isolation": option_isolation, "decide_idx": decide_idx, "opt_idx": opt_idx,
+    return {"ids": ids, "seg": seg, "pos": pos, "opt": opt, "option_isolation": option_isolation, "readout": readout, "decide_idx": decide_idx, "opt_idx": opt_idx,
             "labels": [q["label"] for q in rec["questions"]], "state_truncated": len(state_tokens) + 1 > max_state}
 
 
@@ -223,9 +234,15 @@ def rows_of(enc):
 
 
 class PointerHead(nn.Module):
-    def __init__(self, d, dp=256):
-        """dp = pointer dimension (head capacity knob)."""
+    def __init__(self, d, dp=256, norm=False):
+        """dp = pointer dimension (head capacity knob). norm: layer-normalize (no affine) the hidden states before the
+        projections. Gemma 4's final hidden states have norms in the hundreds (Qwen's are far smaller), so without it the
+        untrained head starts at extreme logits and LoRA training finds a shortcut: shrink and homogenize the option
+        states so every Choice question answers uniform (the first Gemma pilot collapsed exactly so: option-state cosine
+        0.85 -> 0.99, norm 217 -> 54, Choice accuracy at chance). Normalized inputs make the head scale-invariant, so
+        that shortcut no longer lowers the loss."""
         super().__init__()
+        self.d, self.norm = d, norm
         self.q, self.k = nn.Linear(d, dp), nn.Linear(d, dp)
         self.scale = 1 / math.sqrt(dp)
         # calibration: logits are divided by this at inference (eval mode) only. 1.0 = raw. A checkpoint carries the value fitted on
@@ -234,6 +251,8 @@ class PointerHead(nn.Module):
         self.temperature = 1.0
 
     def forward(self, h_decide, h_opts):  # [d], [K,d] -> logits [K]
+        if self.norm:
+            h_decide, h_opts = F.layer_norm(h_decide, (self.d,)), F.layer_norm(h_opts, (self.d,))
         z = (self.k(h_opts) @ self.q(h_decide)) * self.scale
         return z if self.training or self.temperature == 1.0 else z / self.temperature
 
@@ -245,7 +264,7 @@ SCORING_INTERFACE = ("encode", "forward", "probs", "probs_and_prefix", "probs_wi
 
 
 class DecisionModel(nn.Module):
-    def __init__(self, name, tok, device, lora=None, revision=None, attn=None, head_dim=256, option_isolation=False, special_embeddings=False, lora_targets="all", dtype=torch.float32):
+    def __init__(self, name, tok, device, lora=None, revision=None, attn=None, head_dim=256, option_isolation=False, special_embeddings=False, lora_targets="all", dtype=torch.float32, head_norm=False, readout="delimiter"):
         super().__init__()
         cfg = text_config(name, revision)
         # hybrid backbones (Qwen3.5: Gated DeltaNet layers, recurrent) cannot honour the block-causal mask, and
@@ -263,6 +282,8 @@ class DecisionModel(nn.Module):
         self.pad_id = pad_id(tok)
         if self.rows_only and option_isolation: raise ValueError("option_isolation needs the packed mask; not available on row-form backbones")
         self.option_isolation = option_isolation
+        if readout not in READOUTS: raise ValueError(f"readout must be one of {READOUTS}")
+        self.readout = readout
         if lora:
             from peft import LoraConfig, get_peft_model
             extra = {"trainable_token_indices": {"embed_tokens": [tok.convert_tokens_to_ids(t) for t in delimiters(tok)]}} if special_embeddings else {}
@@ -274,7 +295,7 @@ class DecisionModel(nn.Module):
                 targets = targets + ["in_proj_qkv", "in_proj_z", "in_proj_a", "in_proj_b", "out_proj"]
             cfg = LoraConfig(task_type="FEATURE_EXTRACTION", r=lora, lora_alpha=2 * lora, lora_dropout=0.05, target_modules=targets, **extra)
             self.lm = get_peft_model(self.lm, cfg)
-        self.head = PointerHead(self.lm.config.hidden_size, dp=head_dim)
+        self.head = PointerHead(self.lm.config.hidden_size, dp=head_dim, norm=head_norm)
         self.device = device
         self.to(device)
 
@@ -292,8 +313,8 @@ class DecisionModel(nn.Module):
         return str(next(self.lm.parameters()).dtype).removeprefix("torch.")
 
     def encode(self, tok, rec, **kw):
-        """encode() with this model's option-isolation setting; use this from serving/eval code."""
-        return encode(tok, rec, option_isolation=self.option_isolation, **kw)
+        """encode() with this model's option-isolation and readout settings; use this from serving/eval code."""
+        return encode(tok, rec, option_isolation=self.option_isolation, readout=self.readout, **kw)
 
     def hidden(self, enc):
         return self.hidden_batch([enc])[0, : len(enc["ids"])]

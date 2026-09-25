@@ -29,7 +29,7 @@ def main():
     dev = a.device or default_device()
     tok = load_tokenizer(a.base)
     t0 = time.time()
-    model = DecisionModel(a.base, tok, dev, lora=a.lora, dtype=torch.bfloat16 if a.weights_dtype == "bf16" else torch.float32)
+    model = DecisionModel(a.base, tok, dev, lora=a.lora, head_norm=True, dtype=torch.bfloat16 if a.weights_dtype == "bf16" else torch.float32)
     print(f"loaded in {time.time() - t0:.0f}s on {dev}: {type(model.lm.get_base_model() if hasattr(model.lm, 'get_base_model') else model.lm).__name__}, "
           f"hidden {model.lm.config.hidden_size}, layers {model.lm.config.num_hidden_layers}, rows_only={model.rows_only}, hybrid={model.hybrid}")
     trainable = sum(p.numel() for p in model.trainable_parameters())
