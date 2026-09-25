@@ -226,7 +226,7 @@ def parse_args():
     ap.add_argument("--special_embeddings", type=int, choices=[0, 1], default=0, help="also train the embeddings of the 5 delimiter tokens")
     ap.add_argument("--head_dim", type=int, default=256, help="pointer head dimension")
     ap.add_argument("--readout", choices=["delimiter", "content"], default="delimiter", help="token the pointer head reads per option (model.encode): the </opt> delimiter (Kev, for Qwen bases) or the last option-content token (Gemma bases)")
-    ap.add_argument("--head_warmup_steps", type=int, default=0, help="train the pointer head alone (LoRA frozen, no backbone backward) for this many optimizer steps before joint training: linear-probe-then-fine-tune, so a random head cannot push the adapter into homogenizing the option states (Gemma 4 did exactly that in three pilots)")
+    ap.add_argument("--head_warmup_steps", type=int, default=0, help="train the pointer head alone for this many optimizer steps before joint training (the LoRA gradients are computed and discarded: the forward-only path leaks device memory on MPS): linear-probe-then-fine-tune, so a random head cannot push the adapter into homogenizing the option states (Gemma 4 did exactly that in three pilots)")
     ap.add_argument("--head_norm", type=int, choices=[0, 1], default=1, help="layer-normalize the hidden states the pointer head reads (PointerHead.norm); required on Gemma 4, whose hidden norms are in the hundreds")
     ap.add_argument("--lora_targets", choices=["all", "dense", "attn", "qv"], default="all", help="LoRA module set; fewer modules = less drift from the base; dense = all minus the DeltaNet projections on hybrid bases")
     ap.add_argument("--base_revision", default="", help="pin the base commit when the suite manifest does not pin this base")
@@ -330,8 +330,10 @@ def main():
     lora_params = [p for p in model.trainable_parameters() if id(p) not in head_ids]
     warm = a.head_warmup_steps > 0
     if warm:
-        for p in lora_params: p.requires_grad_(False)   # autograd then builds no backbone graph: the warm-up costs a forward pass per record
-        print(f"head warm-up: LoRA frozen for the first {a.head_warmup_steps} optimizer steps", flush=True)
+        # The LoRA keeps requires_grad so every step builds the same graph as joint training; its gradients are dropped
+        # before the optimizer step (AdamW skips parameters without a gradient, so no moments accumulate either). Freezing
+        # the LoRA instead (forward-only backbone) leaked non-pool device memory on MPS: 49 GB and an OOM within 250 steps.
+        print(f"head warm-up: LoRA gradients discarded for the first {a.head_warmup_steps} optimizer steps", flush=True)
     model.train(); t0 = time.time(); run = Counter(); step = seen = tokens_seen = peak_mem = 0
     for ep in range(a.epochs):
         rng.shuffle(reqs)
@@ -346,10 +348,11 @@ def main():
             peak_mem = max(peak_mem, allocated_bytes(dev))
             if (mb + 1) % a.accum == 0 or mb + 1 == micro_per_epoch:
                 torch.nn.utils.clip_grad_norm_(model.trainable_parameters(), 1.0)
+                if warm:
+                    for p in lora_params: p.grad = None
                 opt.step(); sched.step(); opt.zero_grad(); step += 1
                 if warm and step >= a.head_warmup_steps:
-                    for p in lora_params: p.requires_grad_(True)
-                    warm = False; print(f"head warm-up done at step {step}: LoRA unfrozen", flush=True)
+                    warm = False; print(f"head warm-up done at step {step}: LoRA now trains", flush=True)
                 if dev == "mps": empty_cache(dev)   # MPS only: per-step cache release keeps the unified-memory footprint down; on CUDA it would just slow the step
                 if step % 10 == 0:
                     print(f"ep{ep} step {step}/{steps} loss {run['ce']/run['n']:.3f} kl {run['kl']/max(run['kl_n'],1):.3f} anchor {run['anchor']/max(run['anchor_n'],1):.3f} {(time.time()-t0)/seen:.3f}s/rec", flush=True)

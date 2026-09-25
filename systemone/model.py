@@ -327,9 +327,12 @@ class DecisionModel(nn.Module):
     def _pad_rows(self, rows):
         """Right-pad (ids, pos) token rows into [N, L] id / position tensors and a [N, L] attention mask (1 = real token).
         Pads sit after every real token and are masked keys, so they never change a real token's hidden state (parity
-        measured exact). On MPS in eval mode L is rounded up to a SHAPE_BUCKET multiple so kernels are warmed per bucket."""
+        measured exact). On MPS, L is rounded up to a SHAPE_BUCKET multiple so kernels are compiled per bucket, not per
+        length: a forward-only pass (the head warm-up in training, evaluation) otherwise compiles and caches a graph for
+        every distinct length and the process runs out of memory after a few hundred records (49 GB of non-pool
+        allocations on an M3 Max at step 240 of a warm-up)."""
         L = max(len(ids) for ids, _ in rows)
-        if str(self.device) == "mps" and not self.training: L = -(-L // self.SHAPE_BUCKET) * self.SHAPE_BUCKET
+        if str(self.device) == "mps": L = -(-L // self.SHAPE_BUCKET) * self.SHAPE_BUCKET
         ids = torch.full((len(rows), L), self.pad_id, device=self.device)
         pos = torch.zeros((len(rows), L), dtype=torch.long, device=self.device)
         att = torch.zeros((len(rows), L), dtype=torch.long, device=self.device)
