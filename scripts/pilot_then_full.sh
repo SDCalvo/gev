@@ -28,13 +28,4 @@ print(f'clean={acc:.3f} agnews={ag:.3f} banking77={bk:.3f} pass={int(acc >= 0.50
 stage "gate: pilot on 200 dev records: $GATE"
 [[ "$GATE" == *"pass=1"* ]] || fail "gate: $GATE (need clean >= 0.50 and agnews >= 0.45), full run not started"
 
-stage "full: training runs/e4b-v7 (Kev-4B recipe, 2 epochs)"
-$PY -m systemone.train --suite evals/v7/decision-v7 --epochs 2 --weights_dtype bf16 --lr 1e-4 --head_lr 2e-4 --head_norm 1 --head_warmup_steps 400 --readout delimiter --accum 8 --out runs/e4b-v7 > "$LOG/full-train.log" 2>&1 || fail "full training (see $LOG/full-train.log)"
-
-stage "eval: decision-v7 development (in distribution)"
-$PY -m systemone.benchmark --run runs/e4b-v7 --suite evals/v7/decision-v7 --out runs/e4b-v7/development > "$LOG/full-dev.log" 2>&1 || fail "development benchmark"
-stage "eval: transfer-v4 development (out of domain)"
-$PY -m systemone.benchmark --run runs/e4b-v7 --suite evals/v4/transfer-v4 --out runs/e4b-v7/transfer > "$LOG/full-transfer.log" 2>&1 || fail "transfer benchmark"
-stage "calibrate: fitting the temperature on development rows"
-$PY scripts/calibrate_checkpoint.py --run runs/e4b-v7 --rows runs/e4b-v7/development/rows.json --transfer runs/e4b-v7/transfer/rows.json > "$LOG/full-calibrate.log" 2>&1 || fail "calibration"
-stage "DONE: runs/e4b-v7 trained, evaluated and calibrated"
+exec scripts/full_run.sh   # full training (resumable), evaluation, calibration

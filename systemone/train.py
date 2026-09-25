@@ -10,7 +10,7 @@ fp32. --dtype bf16 (autocast) is CUDA only.
 
 Batch size is small (variable-length records with custom masks) and gradients are accumulated over --accum micro-batches.
 """
-import argparse, contextlib, json, math, random, resource, sys, time
+import argparse, contextlib, json, math, random, resource, shutil, sys, time
 from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
@@ -20,7 +20,7 @@ from .checkpoint import Checkpoint, Meta, write_meta
 from .device import allocated_bytes, default_device, empty_cache
 from .data import EVAL_ONLY, build, augment, load_records, materialize, none_pair, source_seed
 from .suite import SYNTHETIC_SOURCES, digest, load_split, read_json, read_manifest, validate_training, write_json
-from .model import MAX_STATE, MAX_TRAIN_STATE, DecisionModel, fits, load_tokenizer, training_context
+from .model import MAX_STATE, MAX_TRAIN_STATE, ContextOverflow, DecisionModel, fits, load_tokenizer, training_context
 
 
 # --- losses -----------------------------------------------------------------------------------------------------------
@@ -147,9 +147,28 @@ class Variant:
         return len(self.enc["ids"]) + (len(self.permuted[0]["ids"]) if self.permuted else 0)
 
 
+SKIPPED = Counter()   # training records dropped because they do not encode within the context (see encode_batch)
+
+
+def _encode_variants(model, tok, variants, limits, max_packed):
+    encs = []
+    for v in variants:
+        rec = materialize(v)
+        enc = model.encode(tok, rec, strict=True, **limits)
+        if len(enc["ids"]) > max_packed:
+            raise ContextOverflow(f"training request exceeds {max_packed} packed tokens")
+        encs.append((rec, enc))
+    return encs
+
+
 def encode_batch(model, tok, a, chunk, epoch):
     """Augment each request (fresh permutation / none option / distractor per epoch), optionally add its none-pair
-    siblings and a permuted copy for the KL term, and encode strictly."""
+    siblings and a permuted copy for the KL term, and encode strictly.
+
+    A frozen suite is admitted under the tokenizers of its pinned bases with headroom for augmentation; another
+    tokenizer (Gemma's, for a suite frozen under Qwen's) can push a few records past the branch limit. Such a record
+    is retried in its clean form (permuted only) and, if that does not fit either, skipped and counted in SKIPPED,
+    instead of aborting a multi-hour run (the first Gemma full run died at step 690 of 3,144 on one Banking77 record)."""
     out, c = [], training_context(a.max_state)
     limits = {"max_state": c["max_state"], "max_branch": c["max_branch"]}
     for req in chunk:
@@ -157,11 +176,18 @@ def encode_batch(model, tok, a, chunk, epoch):
         variants = [augment(req, item_rng, p_none=a.p_none, p_none_distract=a.p_none_distract, p_distract=a.p_distract)]
         if a.p_none_pair > 0 and item_rng.random() < a.p_none_pair:
             variants += none_pair(req, item_rng)
-        for v in variants:
-            rec = materialize(v)
-            enc = model.encode(tok, rec, strict=True, **limits)
-            if len(enc["ids"]) > c["max_packed"]:
-                raise ValueError(f"training request exceeds {c['max_packed']} packed tokens")
+        try:
+            encs = _encode_variants(model, tok, variants, limits, c["max_packed"])
+        except ContextOverflow:
+            try:
+                encs = _encode_variants(model, tok, [augment(req, item_rng, p_none=0, p_none_distract=0, p_distract=0)], limits, c["max_packed"])
+                SKIPPED["de-augmented"] += 1
+            except ContextOverflow:
+                SKIPPED["skipped"] += 1
+                if SKIPPED["skipped"] <= 5 or SKIPPED["skipped"] % 50 == 0:
+                    print(f"skipping {req['_meta']['id']}: does not encode within the training context ({dict(SKIPPED)})", flush=True)
+                continue
+        for rec, enc in encs:
             out.append(Variant(rec, enc, req["_meta"]["id"], req["_meta"]["source"]))
         if a.perm_kl > 0 and item_rng.random() < a.perm_frac and any(q["qtype"] == "choice" and len(q["options"]) >= 3 for q in rec["questions"]):
             rec2, perms = permuted_copy(rec, item_rng)
@@ -247,6 +273,8 @@ def parse_args():
                                                    "(local directory or hub id) instead of starting from the base model; keeps the "
                                                    "released model's in-domain skill while adapting to a new domain")
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--save_every", type=int, default=0, help="write a resumable checkpoint (adapter, head, optimizer, schedule, data order) to <out>/ckpt every this many optimizer steps; 0 = only the final save")
+    ap.add_argument("--resume", action="store_true", help="continue an interrupted run from <out>/ckpt (same arguments); the data order and every RNG state are restored, so the run is the one that would have happened uninterrupted")
     a = ap.parse_args()
     if a.head_warmup_steps < 0: ap.error("--head_warmup_steps must be >= 0")
     if min(a.epochs, a.accum, a.n_per_source, a.lora, a.batch, a.synthetic_repeat) < 1 or not 0 < a.public_frac <= 1:
@@ -264,9 +292,45 @@ def parse_args():
         ap.error(f"--max_state must be in [{MAX_STATE}, {MAX_TRAIN_STATE}]")
     if a.replay and not (a.data and a.suite):
         ap.error("--replay needs both --data and --suite")
-    if Path(a.out).exists():
+    if a.save_every < 0: ap.error("--save_every must be >= 0")
+    if a.resume:
+        if not (Path(a.out) / "ckpt" / "state.pt").exists(): ap.error(f"--resume: no checkpoint at {a.out}/ckpt")
+    elif Path(a.out).exists():
         ap.error("refusing to overwrite an existing run")
     return a
+
+
+def save_checkpoint(a, model, opt, sched, rng, ep, mb, step, order, warm, counters):
+    """Everything a resume needs, written atomically (a crash mid-write must not destroy the previous checkpoint)."""
+    from peft import get_peft_model_state_dict
+    from safetensors.torch import save_file
+    d = Path(a.out) / "ckpt"; tmp = Path(a.out) / "ckpt.tmp"
+    if tmp.exists(): shutil.rmtree(tmp)
+    tmp.mkdir(parents=True)
+    save_file({k: v.detach().cpu().contiguous() for k, v in get_peft_model_state_dict(model.lm).items()}, str(tmp / "adapter_model.safetensors"))
+    torch.save({"epoch": ep, "mb": mb, "step": step, "order": order, "warm": warm, "counters": dict(counters),
+                "head": {k: v.cpu() for k, v in model.head.state_dict().items()}, "opt": opt.state_dict(), "sched": sched.state_dict(),
+                "rng": rng.getstate(), "torch_rng": torch.get_rng_state(), "args": vars(a)}, tmp / "state.pt")
+    if d.exists(): shutil.rmtree(d)
+    tmp.rename(d)
+    print(f"checkpoint: step {step} (epoch {ep}, micro-batch {mb}) -> {d}", flush=True)
+
+
+def load_checkpoint(a, model, opt, sched, rng):
+    from peft import set_peft_model_state_dict
+    from safetensors.torch import load_file
+    d = Path(a.out) / "ckpt"
+    st = torch.load(d / "state.pt", map_location="cpu", weights_only=False)
+    same = {k: v for k, v in st["args"].items() if k not in ("resume", "save_every")}
+    mine = {k: v for k, v in vars(a).items() if k not in ("resume", "save_every")}
+    if same != mine:
+        raise ValueError(f"--resume: arguments differ from the checkpoint's: {[k for k in mine if mine[k] != same.get(k)]}")
+    set_peft_model_state_dict(model.lm, load_file(str(d / "adapter_model.safetensors")))
+    model.head.load_state_dict(st["head"])
+    opt.load_state_dict(st["opt"]); sched.load_state_dict(st["sched"])
+    rng.setstate(st["rng"]); torch.set_rng_state(st["torch_rng"])
+    print(f"resumed from step {st['step']} (epoch {st['epoch']}, micro-batch {st['mb']})", flush=True)
+    return st
 
 
 def pinned_revision(a, manifest):
@@ -282,7 +346,7 @@ def pinned_revision(a, manifest):
 
 def main():
     a = parse_args()
-    out_dir = Path(a.out); out_dir.mkdir(parents=True)
+    out_dir = Path(a.out); out_dir.mkdir(parents=True, exist_ok=a.resume)
     torch.manual_seed(a.seed); rng = random.Random(a.seed)
     dev = a.device or default_device()
     if dev == "cuda":
@@ -335,17 +399,25 @@ def main():
         # the LoRA instead (forward-only backbone) leaked non-pool device memory on MPS: 49 GB and an OOM within 250 steps.
         print(f"head warm-up: LoRA gradients discarded for the first {a.head_warmup_steps} optimizer steps", flush=True)
     model.train(); t0 = time.time(); run = Counter(); step = seen = tokens_seen = peak_mem = 0
-    for ep in range(a.epochs):
-        rng.shuffle(reqs)
-        for mb in range(micro_per_epoch):
-            chunk = reqs[mb * a.batch : (mb + 1) * a.batch]
+    start_ep, start_mb, order = 0, 0, None
+    if a.resume:
+        st = load_checkpoint(a, model, opt, sched, rng)
+        start_ep, start_mb, step, order, warm = st["epoch"], st["mb"], st["step"], st["order"], st["warm"]
+        seen, tokens_seen = st["counters"].get("seen", 0), st["counters"].get("tokens_seen", 0)
+        t0 -= st["counters"].get("elapsed", 0.0)
+    for ep in range(start_ep, a.epochs):
+        if order is None:
+            order = list(range(len(reqs))); rng.shuffle(order)
+        for mb in range(start_mb if ep == start_ep else 0, micro_per_epoch):
+            chunk = [reqs[i] for i in order[mb * a.batch : (mb + 1) * a.batch]]
             batch = encode_batch(model, tok, a, chunk, ep)
-            loss, terms = batch_loss(model, a, batch, dev, anchors, anchor_sources, autocast)
-            # weight by source records in the accumulation group so none-pair siblings do not inflate a record's share
-            group_records = accumulation_records(len(reqs), a.batch, a.accum, mb) * (len(batch) / len(chunk))
-            (loss / group_records).backward()
-            run += terms; run["n"] += len(batch); seen += len(batch); tokens_seen += sum(v.tokens for v in batch)
-            peak_mem = max(peak_mem, allocated_bytes(dev))
+            if batch:
+                loss, terms = batch_loss(model, a, batch, dev, anchors, anchor_sources, autocast)
+                # weight by source records in the accumulation group so none-pair siblings do not inflate a record's share
+                group_records = accumulation_records(len(reqs), a.batch, a.accum, mb) * (len(batch) / len(chunk))
+                (loss / group_records).backward()
+                run += terms; run["n"] += len(batch); seen += len(batch); tokens_seen += sum(v.tokens for v in batch)
+                peak_mem = max(peak_mem, allocated_bytes(dev))
             if (mb + 1) % a.accum == 0 or mb + 1 == micro_per_epoch:
                 torch.nn.utils.clip_grad_norm_(model.trainable_parameters(), 1.0)
                 if warm:
@@ -355,15 +427,19 @@ def main():
                     warm = False; print(f"head warm-up done at step {step}: LoRA now trains", flush=True)
                 if dev == "mps": empty_cache(dev)   # MPS only: per-step cache release keeps the unified-memory footprint down; on CUDA it would just slow the step
                 if step % 10 == 0:
-                    print(f"ep{ep} step {step}/{steps} loss {run['ce']/run['n']:.3f} kl {run['kl']/max(run['kl_n'],1):.3f} anchor {run['anchor']/max(run['anchor_n'],1):.3f} {(time.time()-t0)/seen:.3f}s/rec", flush=True)
+                    print(f"ep{ep} step {step}/{steps} loss {run['ce']/max(run['n'],1):.3f} kl {run['kl']/max(run['kl_n'],1):.3f} anchor {run['anchor']/max(run['anchor_n'],1):.3f} {(time.time()-t0)/max(seen,1):.3f}s/rec", flush=True)
                     run = Counter()
+                if a.save_every and step % a.save_every == 0 and step < steps:
+                    save_checkpoint(a, model, opt, sched, rng, ep, mb + 1, step, order, warm, {"seen": seen, "tokens_seen": tokens_seen, "elapsed": time.time() - t0})
+        order = None
+    if SKIPPED: print(f"records that did not encode within the training context: {dict(SKIPPED)}", flush=True)
 
     model.lm.save_pretrained(a.out)
     meta.head, meta.extra = model.head.state_dict(), {"args": vars(a), "suite_sha256": suite_hash, "init_source": init_source}
     write_meta(a.out, meta)
     tok.save_pretrained(a.out)
     write_json(out_dir / "training_metrics.json", {"wall_seconds": time.time() - t0, "records_seen": seen,
-               "requested_records": a.epochs * len(reqs), "truncated_records": 0, "rejected_records": 0,
+               "requested_records": a.epochs * len(reqs), "truncated_records": SKIPPED["de-augmented"], "rejected_records": SKIPPED["skipped"],
                "optimizer_steps": step, "forward_tokens": tokens_seen,
                "peak_device_bytes": peak_mem, "device": dev, "dtype": a.dtype, "batch": a.batch,
                "peak_rss_bytes": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss * (1 if sys.platform == "darwin" else 1024)})
