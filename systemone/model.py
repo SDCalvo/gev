@@ -237,7 +237,7 @@ def rows_of(enc):
 
 
 class PointerHead(nn.Module):
-    def __init__(self, d, dp=256, norm=False):
+    def __init__(self, d, dp=256, norm=False, n_layers=0):
         """dp = pointer dimension (head capacity knob). norm: layer-normalize (no affine) the hidden states before the
         projections. Gemma 4's final hidden states have norms in the hundreds (Qwen's are far smaller), so without it the
         untrained head starts at extreme logits and LoRA training finds a shortcut: shrink and homogenize the option
@@ -248,6 +248,9 @@ class PointerHead(nn.Module):
         self.d, self.norm = d, norm
         self.q, self.k = nn.Linear(d, dp), nn.Linear(d, dp)
         self.scale = 1 / math.sqrt(dp)
+        # DecisionModel.readout_layers: softmax weights over [final layer, *readout_layers], applied to layer-normalized
+        # states (DecisionModel._states). Initialized uniform. Lives here so a checkpoint's head.pt carries it.
+        self.layer_mix = nn.Parameter(torch.zeros(1 + n_layers)) if n_layers else None   # absent for final-layer-only heads, so older head.pt files load strictly
         # calibration: logits are divided by this at inference (eval mode) only. 1.0 = raw. A checkpoint carries the value fitted on
         # its in-distribution development rows (scripts/calibrate_checkpoint.py -> head.pt["temperature"]); training always sees T=1 so
         # a fitted value stays meaningful, and the argmax is unchanged by construction.
@@ -267,7 +270,7 @@ SCORING_INTERFACE = ("encode", "forward", "probs", "probs_and_prefix", "probs_wi
 
 
 class DecisionModel(nn.Module):
-    def __init__(self, name, tok, device, lora=None, revision=None, attn=None, head_dim=256, option_isolation=False, special_embeddings=False, lora_targets="all", dtype=torch.float32, head_norm=False, readout="delimiter"):
+    def __init__(self, name, tok, device, lora=None, revision=None, attn=None, head_dim=256, option_isolation=False, special_embeddings=False, lora_targets="all", dtype=torch.float32, head_norm=False, readout="delimiter", readout_layers=()):
         super().__init__()
         cfg = text_config(name, revision)
         # hybrid backbones (Qwen3.5: Gated DeltaNet layers, recurrent) cannot honour the block-causal mask, and
@@ -298,9 +301,35 @@ class DecisionModel(nn.Module):
                 targets = targets + ["in_proj_qkv", "in_proj_z", "in_proj_a", "in_proj_b", "out_proj"]
             cfg = LoraConfig(task_type="FEATURE_EXTRACTION", r=lora, lora_alpha=2 * lora, lora_dropout=0.05, target_modules=targets, **extra)
             self.lm = get_peft_model(self.lm, cfg)
-        self.head = PointerHead(self.lm.config.hidden_size, dp=head_dim, norm=head_norm)
+        # readout_layers: decoder layers (0-based) whose output states the head reads mixed with the final layer's
+        # (softmax weights in head.layer_mix, each state layer-normalized first). Gemma 4's final layer carries less
+        # option content than its middle layers (pointer heads on frozen features: 0.61 at the final layer vs 0.75 at
+        # layer 12 on agnews); the mix lets training choose. Captured by forward hooks on the decoder layers, which
+        # peft's later Linear replacements leave in place.
+        self.readout_layers = tuple(readout_layers)
+        self._captured = {}
+        if self.readout_layers:
+            layers = self.decoder_layers()
+            for i in self.readout_layers:
+                if not 0 <= i < len(layers): raise ValueError(f"readout layer {i} out of range (0..{len(layers) - 1})")
+                layers[i].register_forward_hook(lambda mod, inp, out, i=i: self._captured.__setitem__(i, out[0] if isinstance(out, tuple) else out))
+        self.head = PointerHead(self.lm.config.hidden_size, dp=head_dim, norm=head_norm, n_layers=len(self.readout_layers))
         self.device = device
         self.to(device)
+
+    def decoder_layers(self):
+        """The backbone's decoder layers, through the peft wrapper when there is one."""
+        inner = self.lm.get_base_model() if hasattr(self.lm, "get_base_model") else self.lm
+        return inner.layers
+
+    def _states(self, last_hidden_state):
+        """The states the head reads for a forward pass: the final layer's, or the learned mix with the captured
+        readout layers (same [B, L, d] shape; every term layer-normalized so the layers are on one scale)."""
+        h = last_hidden_state.float()
+        if not self.readout_layers: return h
+        w = torch.softmax(self.head.layer_mix, 0)
+        terms = [h] + [self._captured[i].float() for i in self.readout_layers]
+        return sum(w[j] * F.layer_norm(t, (t.shape[-1],)) for j, t in enumerate(terms))
 
     backend = "torch"           # the only backend here (see checkpoint.LoadOptions)
 
@@ -348,7 +377,7 @@ class DecisionModel(nn.Module):
             raise ValueError("cannot mix option-isolated and plain encodings in one batch")
         lm_dtype = next(self.lm.parameters()).dtype
         mask = branch_mask_batch([e["seg"] for e in encs], self.device, dtype=lm_dtype, opts=[e["opt"] for e in encs] if isolate else None, length=ids.shape[1])
-        return self.lm(input_ids=ids, position_ids=pos, attention_mask=mask).last_hidden_state.float()   # head stays fp32
+        return self._states(self.lm(input_ids=ids, position_ids=pos, attention_mask=mask).last_hidden_state)   # head stays fp32
 
     def _readout(self, h, enc):
         return [self.head(h[d], h[torch.tensor(oi, device=self.device)]) for d, oi in zip(enc["decide_idx"], enc["opt_idx"])]
@@ -374,7 +403,7 @@ class DecisionModel(nn.Module):
                 replica = copy.deepcopy(cache); replica.reorder_cache(torch.zeros(len(part), dtype=torch.long, device=self.device))
                 att = torch.cat([torch.ones((len(part), prefix_len), dtype=torch.long, device=self.device), att], 1)
                 past = {"past_key_values": replica, "use_cache": True}
-            h = self.lm(input_ids=ids, position_ids=pos, attention_mask=att, **past).last_hidden_state.float()
+            h = self._states(self.lm(input_ids=ids, position_ids=pos, attention_mask=att, **past).last_hidden_state)
             out += [h[i, : len(row_ids)] for i, (row_ids, _) in enumerate(part)]
         return out
 
@@ -424,7 +453,7 @@ class DecisionModel(nn.Module):
         ids = torch.tensor([enc["ids"][:Ls]], device=self.device); pos = torch.tensor([enc["pos"][:Ls]], device=self.device)
         # the cache must know the layer types (hybrid backbones keep recurrent + conv states per DeltaNet layer)
         out = self.lm(input_ids=ids, position_ids=pos, past_key_values=DynamicCache(config=self.lm.config), use_cache=True)
-        return Ls, out.past_key_values, out.last_hidden_state[0].float()
+        return Ls, out.past_key_values, self._states(out.last_hidden_state)[0]
 
     @torch.no_grad()
     def probs_and_prefix(self, enc):
@@ -440,7 +469,7 @@ class DecisionModel(nn.Module):
         dt = next(self.lm.parameters()).dtype
         mask = branch_mask_batch([enc["seg"]], self.device, dtype=dt, opts=[enc["opt"]] if enc.get("option_isolation") else None)
         out = self.lm(input_ids=ids, position_ids=pos, attention_mask=mask, past_key_values=DynamicCache(config=self.lm.config), use_cache=True)
-        h = out.last_hidden_state[0].float()
+        h = self._states(out.last_hidden_state)[0]
         out.past_key_values.crop(-(len(enc["ids"]) - Ls))     # keep the state only (negative = drop that many trailing tokens; positive form deprecated in transformers 5)
         return [F.softmax(z, -1).cpu() for z in self._readout(h, enc)], (Ls, out.past_key_values, h[:Ls].clone())
 
@@ -457,7 +486,7 @@ class DecisionModel(nn.Module):
         mask = branch_mask_batch([enc["seg"]], self.device, dtype=dt, opts=[enc["opt"]] if enc.get("option_isolation") else None)[:, :, Ls:, :]
         try:
             out = self.lm(input_ids=ids, position_ids=pos, past_key_values=cache, attention_mask=mask, use_cache=True)
-            h = torch.cat([h_state, out.last_hidden_state[0].float()], 0)
+            h = torch.cat([h_state, self._states(out.last_hidden_state)[0]], 0)
         finally:
             cache.crop(-(len(enc["ids"]) - Ls))
         return [F.softmax(z, -1).cpu() for z in self._readout(h, enc)]

@@ -1,0 +1,18 @@
+{
+  "seed": "delta-v1-20260924",
+  "structures": 60,
+  "sources": {
+    "night2_dates": 900,
+    "night2_unknowable": 256,
+    "night2_unknowable_control": 269,
+    "night2_assertion": 800,
+    "compositional": 960,
+    "legacy_policy": 540
+  },
+  "files": {
+    "train.jsonl": {
+      "sha256": "3d838f40bc81e2de2f5711b4e9285f935bca7722fe7ea4947de8b9239988e818",
+      "records": 3725
+    }
+  }
+}

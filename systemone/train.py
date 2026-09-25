@@ -253,6 +253,7 @@ def parse_args():
     ap.add_argument("--head_dim", type=int, default=256, help="pointer head dimension")
     ap.add_argument("--readout", choices=["delimiter", "content"], default="delimiter", help="token the pointer head reads per option (model.encode): the </opt> delimiter (Kev, for Qwen bases) or the last option-content token (Gemma bases)")
     ap.add_argument("--head_warmup_steps", type=int, default=0, help="train the pointer head alone for this many optimizer steps before joint training (the LoRA gradients are computed and discarded: the forward-only path leaks device memory on MPS): linear-probe-then-fine-tune, so a random head cannot push the adapter into homogenizing the option states (Gemma 4 did exactly that in three pilots)")
+    ap.add_argument("--readout_layers", default="", help="comma-separated decoder layers whose states the head reads mixed with the final layer's (learned softmax weights, DecisionModel.readout_layers); empty = final layer only")
     ap.add_argument("--head_norm", type=int, choices=[0, 1], default=1, help="layer-normalize the hidden states the pointer head reads (PointerHead.norm); required on Gemma 4, whose hidden norms are in the hundreds")
     ap.add_argument("--lora_targets", choices=["all", "dense", "attn", "qv"], default="all", help="LoRA module set; fewer modules = less drift from the base; dense = all minus the DeltaNet projections on hybrid bases")
     ap.add_argument("--base_revision", default="", help="pin the base commit when the suite manifest does not pin this base")
@@ -277,6 +278,7 @@ def parse_args():
     ap.add_argument("--resume", action="store_true", help="continue an interrupted run from <out>/ckpt (same arguments); the data order and every RNG state are restored, so the run is the one that would have happened uninterrupted")
     a = ap.parse_args()
     if a.head_warmup_steps < 0: ap.error("--head_warmup_steps must be >= 0")
+    a.readout_layers = [int(x) for x in a.readout_layers.split(",") if x.strip()]
     if min(a.epochs, a.accum, a.n_per_source, a.lora, a.batch, a.synthetic_repeat) < 1 or not 0 < a.public_frac <= 1:
         ap.error("epochs, accum, n_per_source, lora, batch and synthetic_repeat must be positive; 0 < public_frac <= 1")
     if a.dtype == "bf16" and a.device != "cuda":
@@ -360,14 +362,14 @@ def main():
     anchor_sources = set(a.anchor_sources.split(",")) if a.anchor_sources else None
 
     tok = load_tokenizer(a.base, revision=revision)
-    model = DecisionModel(a.base, tok, dev, lora=a.lora, revision=revision, head_dim=a.head_dim, head_norm=bool(a.head_norm), readout=a.readout, lora_targets=a.lora_targets,
+    model = DecisionModel(a.base, tok, dev, lora=a.lora, revision=revision, head_dim=a.head_dim, head_norm=bool(a.head_norm), readout=a.readout, readout_layers=a.readout_layers, lora_targets=a.lora_targets,
                           option_isolation=bool(a.option_isolation), special_embeddings=bool(a.special_embeddings),
                           dtype=torch.bfloat16 if a.weights_dtype == "bf16" else torch.float32)
     if a.checkpointing:
         model.lm.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
     model.lm.config.use_cache = False
     # what this run will save as head.pt; also the architecture a warm start must match
-    meta = Meta(base=a.base, base_revision=revision, lora=a.lora, head_dim=a.head_dim, head_norm=bool(a.head_norm), readout=a.readout, option_isolation=bool(a.option_isolation),
+    meta = Meta(base=a.base, base_revision=revision, lora=a.lora, head_dim=a.head_dim, head_norm=bool(a.head_norm), readout=a.readout, readout_layers=list(a.readout_layers), option_isolation=bool(a.option_isolation),
                 special_embeddings=bool(a.special_embeddings), weights_dtype=a.weights_dtype, holdout=holdout)
     init_source = None
     if a.init_from:
