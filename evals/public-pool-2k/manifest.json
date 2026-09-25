@@ -1,0 +1,34 @@
+{
+  "n_per_source": 2000,
+  "seed": 1,
+  "sources": {
+    "trec": 2000,
+    "amazon": 2000,
+    "imdb": 2000,
+    "banking77": 2000,
+    "mnli": 2000,
+    "agnews": 2000,
+    "dbpedia14": 2000,
+    "sst5": 2000,
+    "yelp": 2000,
+    "boolq": 2000
+  },
+  "dataset_revisions": {
+    "CogComp/trec": "65752bf53af25bc935a0dce92fb5b6c930728450",
+    "legacy-datasets/banking77": "f54121560de48f2852f90be299010d1d6dc612ec",
+    "stanfordnlp/imdb": "e6281661ce1c48d982bc483cf8a173c1bbeb5d31",
+    "fancyzhx/ag_news": "eb185aade064a813bc0b7f42de02595523103ca4",
+    "SetFit/amazon_reviews_multi_en": "ec73b665e4be0f567b69d39425355401cfe0d29b",
+    "fancyzhx/dbpedia_14": "9abd46cf7fc8b4c64290f26993c540b92aa145ac",
+    "google/boolq": "35b264d03638db9f4ce671b711558bf7ff0f80d5",
+    "SetFit/sst5": "e51bdcd8cd3a30da231967c1a249ba59361279a3",
+    "nyu-mll/multi_nli": "da70db2af9d09693783c3320c4249840212ee221",
+    "Yelp/yelp_review_full": "c1f9ee939b7d05667af864ee1cb066393154bf85"
+  },
+  "files": {
+    "train.jsonl": {
+      "sha256": "f99a0579e1b147debb063ce7a410cdf035b1d64037e268d963c4923c6cf32da7",
+      "records": 20000
+    }
+  }
+}

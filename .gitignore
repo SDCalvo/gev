@@ -22,3 +22,4 @@ evals/v7/decision-v7/train.jsonl
 !runs/*/*/
 runs/*/*/*
 !runs/*/*/report.json
+evals/public-pool-2k/train.jsonl
