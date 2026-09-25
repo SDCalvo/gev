@@ -1,0 +1,145 @@
+{
+  "version": 3,
+  "base_revisions": {
+    "Qwen/Qwen3-0.6B-Base": "da87bfb608c14b7cf20ba1ce41287e8de496c0cd",
+    "Qwen/Qwen3-4B-Base": "906bfd4b4dc7f14ee4320094d8b41684abff8539",
+    "google/gemma-4-E4B": "411aa17b749aa952df1359d2dcea73917a544d9a"
+  },
+  "dataset_revisions": {
+    "CogComp/trec": "65752bf53af25bc935a0dce92fb5b6c930728450",
+    "legacy-datasets/banking77": "f54121560de48f2852f90be299010d1d6dc612ec",
+    "stanfordnlp/imdb": "e6281661ce1c48d982bc483cf8a173c1bbeb5d31",
+    "fancyzhx/ag_news": "eb185aade064a813bc0b7f42de02595523103ca4",
+    "SetFit/amazon_reviews_multi_en": "ec73b665e4be0f567b69d39425355401cfe0d29b",
+    "fancyzhx/dbpedia_14": "9abd46cf7fc8b4c64290f26993c540b92aa145ac",
+    "google/boolq": "35b264d03638db9f4ce671b711558bf7ff0f80d5",
+    "SetFit/sst5": "e51bdcd8cd3a30da231967c1a249ba59361279a3",
+    "nyu-mll/multi_nli": "da70db2af9d09693783c3320c4249840212ee221",
+    "Yelp/yelp_review_full": "c1f9ee939b7d05667af864ee1cb066393154bf85"
+  },
+  "parent_files": {
+    "evals/decision-v2/train.jsonl": "06aa8aa3b50a093fd24eb6899ef83159da94c669f1d6b0b90d9b1a1c083451d9",
+    "evals/decision-v2/test.jsonl": "cd7d129a84232e0c7a4e92b4840a6dfe14c8bb93c5d1904b526fa8c085325d2d",
+    "evals/decision-v2/calibration.jsonl": "a41dc98443d1dd168e8d4325c37e462b4a863543f0f4bf009033fff528e8ef41",
+    "evals/decision-v2/manifest.json": "e0388e1d13284f5e0a2e6cb33a0fcd34f0099bfc31a6a852bd5cb619f505094d",
+    "evals/decision-v2/development.jsonl": "10e5a72102b844a167ade94c60cf4556cc63950b2ded17fb87bf96028cb557f1",
+    "evals/transfer-v2/train.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "evals/transfer-v2/test.jsonl": "96c06100b7e94772c4eddbd61b42c1a1a9d60911ddb2c23767c11c8980618dde",
+    "evals/transfer-v2/calibration.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "evals/transfer-v2/manifest.json": "a9dd4485e3247014209ecbee28d9fe02d0556c69e95dc30cca0584d1e5c27e35",
+    "evals/transfer-v2/development.jsonl": "02732ee2e662b7ec0c276f7f89ae29f44e7ce262ffac8e9c116c5bc82e5608b8",
+    "evals/public-pool-v4/train.jsonl": "21807df00aa0ab67b5c499f902316e76f8b65b609c31cc3f12f07e9fcbdcb525",
+    "evals/public-pool-v4/test.jsonl": "34b527ea42bfcf23c321fac642118e50434c54fa5756a208dc7dccfa98586613",
+    "evals/public-pool-v4/calibration.jsonl": "820160ceb5332c3f964e9e4b61c9a55876e69358fe3a127a2370d8bf8d548fa4",
+    "evals/public-pool-v4/manifest.json": "aac28e07c739d05178a7da4ee6caf097efeb2e8938d0d8742d1518dd64d30d2c",
+    "evals/public-pool-v4/development.jsonl": "1542b2def96f9c86510ea2976bbc68f878acef0c36aff4cd6ed19868c2d2349f"
+  },
+  "holdout_sources": [
+    "mmlu",
+    "emotion",
+    "tweet_offensive",
+    "qnli",
+    "paws",
+    "sciq",
+    "contrastive",
+    "legacy_holdout",
+    "composition_holdout"
+  ],
+  "trainable_sources": [],
+  "eval_only_sources": [
+    "mmlu",
+    "emotion",
+    "tweet_offensive",
+    "qnli",
+    "paws",
+    "sciq",
+    "contrastive",
+    "legacy_holdout",
+    "composition_holdout"
+  ],
+  "context": {
+    "max_state": 384,
+    "max_branch": 1024,
+    "max_packed": 2048,
+    "truncate": false
+  },
+  "protocol": {
+    "train_shapes": [
+      "atom",
+      "negation",
+      "conjunction",
+      "disjunction",
+      "exception",
+      "conditional",
+      "nested_and",
+      "nested_or"
+    ],
+    "transfer_shapes": [
+      "held_and_or",
+      "held_or_not",
+      "held_conditional"
+    ],
+    "locked_shapes": [
+      "final_combination",
+      "final_negation",
+      "final_exception"
+    ],
+    "train_render_styles": [
+      0,
+      1
+    ],
+    "locked_render_styles": [
+      2
+    ],
+    "public_train_records": 10000,
+    "public_train_pool": "evals/public-pool-v4",
+    "synthetic_records_per_arm": 448,
+    "calibration": "shared; stratified by family and group",
+    "arm_selection": "train_sources selects public sources plus exactly one synthetic arm",
+    "primary": "macro development NLL; transfer and confident-error checks required; no automatic release",
+    "legacy_test": "Inherited v2 locked test bytes retained without inspecting examples; only new structures added to transfer test",
+    "contamination": "Exact semantic checks among new groups, not fuzzy or pretraining decontamination. Inherited legacy test overlap with new synthetic controls is not certified."
+  },
+  "files": {
+    "train.jsonl": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "records": 0,
+      "questions": 0
+    },
+    "calibration.jsonl": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "records": 0,
+      "questions": 0
+    },
+    "development.jsonl": {
+      "sha256": "ff374c49c6c9f15f8a56fb274b4a4857d20497eb8dd1ac07ce01560e682a5f2e",
+      "records": 764,
+      "questions": 764
+    },
+    "test.jsonl": {
+      "sha256": "c30a91274f9b483aac9e4f02ada5dea953b3f1a2829456e0bc07806c4e73b517",
+      "records": 764,
+      "questions": 764
+    }
+  },
+  "code_hashes": {
+    "jev.py": "e0213782359ba2f95adbf045ddaf0a008b08b4162bf6a9b66d4ce55fc91a51cb",
+    "plot.py": "d689c7dd18cde7f9ea77cb4f55c50ff7da1880b21cb2ecf244348e45842a1382",
+    "suite.py": "c4db818f83d7abaf4d8349a5b58f20f70439e04127b0989eb1f831be85578d87",
+    "benchmark.py": "b73f574f9917f44af1aaa4849ad14cab3d65ae66a46648f4e1a669b0ef67c6a5",
+    "contrastive.py": "d6c9a577c9ad598416ed96f7c9037fd7541f1a53b36fd9c22bdae547b554ae87",
+    "__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "serve.py": "bddbaac2c827d79bccb891378eb96407851cbe833fc9c67fbd89ede219fd9ad6",
+    "model.py": "1366fc0c08154d9bffca5b0bb293f6732344b8fb157377083039de303441a383",
+    "api.py": "cdb0602684d798ccd3fc2c86be622f2a8e7bcdeee64d07f95604c7d3fd4701ec",
+    "experiment.py": "2dc01af561735fad38e7c8c653acec002911b1bfc115d1d2002502f6ecb2ad2f",
+    "study_v3.py": "524e3ac00ed95d8370cfc1592b15be53f088d0762945d01107968ce4e451e438",
+    "train.py": "fb6e6a5355b9a78652e405625264145951f25be07280445d21c1962625c85de2",
+    "evaluate.py": "746767d9aff406441daedec52bade4def19c202185d87e4c4e8d3f7ac0e4e4d0",
+    "composition.py": "7667e02da107548cd85953da60c9b411f7be1cb8aef01e1eb0301b68f8d4457d",
+    "compare.py": "bd0445f021de59e35c7bff9304e39dd2e1211e3877a453575594ae7b81b0ada4",
+    "data.py": "6060db6e5d0f0eb3f0180529f285e1ff37a8173a31b5de7c39f46db6ca0da418",
+    "publish.py": "f1fd140bca36ecd454345ca63da17a559f29c14579b8a10472fcea9ccdedf2d6"
+  },
+  "eval_only": true
+}

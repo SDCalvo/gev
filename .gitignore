@@ -1,0 +1,20 @@
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+*.egg-info/
+.DS_Store
+*.log
+
+# training runs: weights and prediction dumps stay local; keep configs, metrics and reports
+runs/*
+!runs/.gitkeep
+!runs/*/
+runs/*/*
+!runs/*/training_config.json
+!runs/*/training_metrics.json
+!runs/*/report.json
+!runs/*/results.jsonl
+
+# the decision-v7 training partition is fetched from the Hub mirror and sha256-checked on first use
+evals/v7/decision-v7/train.jsonl

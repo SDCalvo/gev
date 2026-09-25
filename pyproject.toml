@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "systemone"
+version = "0.1.0"
+description = "A System One decision model (typed choice / score / noul answers, no text generation) on Google's Gemma 4, trained on a Mac"
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+requires-python = ">=3.12,<3.14"
+dependencies = [
+    "accelerate>=1.15.0",
+    "datasets>=3.0",
+    "huggingface_hub>=0.30",
+    "numpy>=2.5.3",
+    "peft>=0.21",
+    "pydantic>=2.9",
+    "scikit-learn>=1.9.1",
+    "torch>=2.6,<2.9",
+    "transformers>=5.17,<6",
+]
+
+[project.optional-dependencies]
+serve = [
+    "fastapi>=0.115",
+    "typesafe-sdk>=0.6.0",
+    "uvicorn>=0.30",
+]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=9.1.1",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["server: needs a running systemone.serve instance (SYSTEMONE_BASE_URL)"]
+
+[tool.setuptools]
+packages = ["systemone"]

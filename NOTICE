@@ -1,0 +1,11 @@
+systemone
+Copyright 2026 Santiago Calvo
+
+This product includes software derived from Kev (https://github.com/jaredpalmer/kev),
+Copyright Jared Palmer, licensed under the Apache License, Version 2.0.
+The training recipe, encoder, pointer head, evaluation suites (evals/) and API
+mapping originate there; this project ports them from Qwen backbones to Google's
+Gemma 4 (Apache License 2.0) and trims the research tooling.
+
+The frozen evaluation suites under evals/ are built from public datasets that carry
+their own licenses (see each manifest's dataset_revisions).

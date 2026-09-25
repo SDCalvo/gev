@@ -1,0 +1,84 @@
+{
+  "version": 1,
+  "seed": 20260918,
+  "holdout_sources": [
+    "mnli",
+    "sst5"
+  ],
+  "dataset_revisions": {
+    "legacy-datasets/banking77": "f54121560de48f2852f90be299010d1d6dc612ec",
+    "google/boolq": "35b264d03638db9f4ce671b711558bf7ff0f80d5",
+    "fancyzhx/ag_news": "eb185aade064a813bc0b7f42de02595523103ca4",
+    "nyu-mll/multi_nli": "da70db2af9d09693783c3320c4249840212ee221",
+    "SetFit/sst5": "e51bdcd8cd3a30da231967c1a249ba59361279a3",
+    "Yelp/yelp_review_full": "c1f9ee939b7d05667af864ee1cb066393154bf85"
+  },
+  "base_revisions": {
+    "Qwen/Qwen2.5-0.5B": "060db6499f32faf8b98477b0a26969ef7d8b9987",
+    "Qwen/Qwen3-0.6B-Base": "da87bfb608c14b7cf20ba1ce41287e8de496c0cd",
+    "google/gemma-4-E4B": "411aa17b749aa952df1359d2dcea73917a544d9a"
+  },
+  "context": {
+    "max_state": 384,
+    "max_branch": 1024,
+    "max_packed": 2048,
+    "truncate": false
+  },
+  "selection": "Normalized exact-state deduplication across partitions; common tokenizer context admission; no fuzzy decontamination or pretraining-contamination claim.",
+  "legacy_checkpoints": "Training/calibration overlap for pre-manifest checkpoints is unknown; exploratory only.",
+  "objective": "Negative macro-average clean development NLL, equal weight per task; raw probabilities.",
+  "files": {
+    "train.jsonl": {
+      "sha256": "e13df2025663bb88e3b75bc4a02cf1e1c4f218bb8ffd937b6d8a96bb0b0b5979",
+      "records": 8,
+      "questions": 14
+    },
+    "calibration.jsonl": {
+      "sha256": "32ae70faf715bf5b8a834d1bac585517d75f52a978e676e4e06c1f81b5037f7c",
+      "records": 8,
+      "questions": 14
+    },
+    "development.jsonl": {
+      "sha256": "e0b18f4b8d95aaa2479a63bfc6b0af5f44bc2fd11bb87e5ca42317c5a5d8a306",
+      "records": 30,
+      "questions": 40
+    },
+    "test.jsonl": {
+      "sha256": "740bbaa1ea4affafd7c63dff1f2103dcd9f98d7745868331fbd3472a5af41cda",
+      "records": 30,
+      "questions": 40
+    }
+  },
+  "admission": {
+    "banking77": {
+      "considered": 8,
+      "accepted": 8
+    },
+    "boolq": {
+      "considered": 8,
+      "accepted": 8
+    },
+    "agnews": {
+      "considered": 8,
+      "accepted": 8
+    },
+    "mnli": {
+      "considered": 4,
+      "accepted": 4
+    },
+    "sst5": {
+      "considered": 4,
+      "accepted": 4
+    },
+    "yelp": {
+      "considered": 8,
+      "accepted": 8
+    }
+  },
+  "code_hashes": {
+    "data.py": "0576516e28c503b2db97e280b415c0be5429831f885789f944929f9010b1111c",
+    "api.py": "cdb0602684d798ccd3fc2c86be622f2a8e7bcdeee64d07f95604c7d3fd4701ec",
+    "model.py": "526a5f85a15d23beecc9c290e6f7865d2787ed2e5083c2c22adf514dbbe37b96",
+    "suite.py": "0e7975703707a2c07085ce6d3ee13e6b3ee826282f05d897dc8480d364065b25"
+  }
+}
