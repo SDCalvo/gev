@@ -19,3 +19,6 @@ runs/*/*
 # the decision-v7 training partition is fetched from the Hub mirror and sha256-checked on first use
 evals/v7/decision-v7/train.jsonl
 .claude/
+!runs/*/*/
+runs/*/*/*
+!runs/*/*/report.json

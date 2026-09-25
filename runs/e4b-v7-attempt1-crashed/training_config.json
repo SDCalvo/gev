@@ -44,9 +44,7 @@
     "max_state": 384,
     "replay": 0,
     "init_from": "",
-    "seed": 0,
-    "save_every": 100,
-    "resume": false
+    "seed": 0
   },
   "suite_sha256": "f12c413fdc66ce045af0d846cac04ec1a3dbb40581d7110d822c0e0bae30fd52",
   "base_revision": "411aa17b749aa952df1359d2dcea73917a544d9a",
