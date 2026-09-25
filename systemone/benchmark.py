@@ -157,7 +157,9 @@ def main():
                     help="suite partition to score (train: teacher predictions for distillation; --allow-test reads the locked test instead)")
     ap.add_argument("--date_facts", action="store_true", help="apply systemone.api.with_date_facts to every state before scoring (the opt-in serving preprocessor); reported in report.json")
     ap.add_argument("--rotations", type=int, default=1, help="average every Choice question over this many cyclic option rotations (systemone.predictors.RotationAveraged); 1 = one order")
+    ap.add_argument("--limit", type=int, default=0, help="score only the first N records of the partition (a quick gate check; 0 = all). Reported in report.json")
     a = ap.parse_args()
+    if a.limit < 0: ap.error("--limit must be >= 0")
     if bool(a.run) == bool(a.remote): ap.error("give exactly one of --run or --remote")
     if a.rotations < 1: ap.error("--rotations must be >= 1")
     if bool(a.suite) == bool(a.data): ap.error("give exactly one of --suite or --data")
@@ -170,12 +172,14 @@ def main():
         manifest = read_manifest(a.suite)
         heldout = manifest["holdout_sources"]; source_hash = digest(Path(a.suite) / "manifest.json")
         context, skip_overlong = manifest.get("context", CONTEXT), bool(manifest.get("eval_only"))
+    if a.limit:
+        records = records[: a.limit]
     if a.date_facts:
         records = [{**r, "state": with_date_facts(r["state"])} for r in records]
     predictor = RemotePredictor(a.remote, a.remote_model, os.environ.get("SYSTEMONE_REMOTE_API_KEY", "local")) if a.remote else LocalPredictor(a.run, a.device, LoadOptions.from_env(), context=context)
     scorer = RotationAveraged(predictor, a.rotations) if a.rotations > 1 else predictor
     report, _ = evaluate_records(records, scorer, a.out, heldout_sources=tuple(heldout), skip_overlong=skip_overlong)
-    report.update(suite_sha256=source_hash, data=a.data, date_facts=a.date_facts, rotations=a.rotations, run=a.run or a.remote, split=split,
+    report.update(suite_sha256=source_hash, data=a.data, date_facts=a.date_facts, rotations=a.rotations, limit=a.limit or None, run=a.run or a.remote, split=split,
                   calibration_applied=predictor.temperature != 1.0 if not a.remote else None,
                   remote={"base_url": a.remote, "requested_model": a.remote_model, "served_model": predictor.served_model} if a.remote else None)
     write_json(Path(a.out) / "report.json", report)
