@@ -8,10 +8,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer, DynamicCache
 
-# Existing single-token, never-used vocabulary entries serve as the five delimiters (state, q, opt, /opt, decide), so
+# Existing single-token, rarely used vocabulary entries serve as the five delimiters (state, q, opt, /opt, decide), so
 # no embedding rows need to be added or trained; LoRA adapts their meaning. Gemma tokenizers reserve thousands of
 # `<unusedN>` tokens (ids 6.. on Gemma 4); Qwen's rarely used FIM/box tokens are kept so Kev checkpoints still encode.
-DELIMITERS = {"gemma": ["<unused0>", "<unused1>", "<unused2>", "<unused3>", "<unused4>"],
+# Gemma's state delimiter is `<bos>` itself: Gemma models form their attention sink on it and read a document badly
+# without it (agnews topic linearly decodable from the <decide> state: 0.45 without, 0.61 with; a pointer head on frozen
+# final-layer features 0.39 -> 0.61). The token count is unchanged and user text cannot produce it (user_tokens).
+DELIMITERS = {"gemma": ["<bos>", "<unused1>", "<unused2>", "<unused3>", "<unused4>"],
               "qwen": ["<|fim_prefix|>", "<|fim_middle|>", "<|box_start|>", "<|box_end|>", "<|fim_suffix|>"]}
 SPECIAL = DELIMITERS["gemma"]   # the default backbone's set; encode() resolves the right one per tokenizer (delimiters)
 
