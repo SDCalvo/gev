@@ -1,0 +1,72 @@
+"""Publish a trained run to the Hugging Face Hub (from Kev's kev.publish).
+
+    uv run python -m gev.publish --run runs/e4b-v9 --repo SDCalvo/gev-e4b --card docs/model-cards/gev-e4b.md
+    uv run python -m gev.publish --run runs/<run> --repo SDCalvo/gev-e4b --message "v2: ..." --tag v2
+
+Uploads: adapter, head.pt, tokenizer files, eval reports, and the model card (--card) as README.md with the repo id and
+run name filled in. Requires `hf auth login`. Serving then accepts the repo id: `python -m gev.serve --run SDCalvo/gev-e4b`.
+"""
+import argparse, os, re, shutil, tempfile
+from pathlib import Path
+from huggingface_hub import HfApi
+from .checkpoint import read_meta
+from .suite import read_json, write_json
+
+FILES = ["adapter_config.json", "adapter_model.safetensors", "head.pt", "tokenizer.json", "tokenizer_config.json",
+         "vocab.json", "merges.txt", "added_tokens.json", "special_tokens_map.json", "eval.json"]
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--run", required=True)
+    ap.add_argument("--repo", required=True, help="e.g. jaredpalmer/kev-0.5b")
+    ap.add_argument("--message", default=None)
+    ap.add_argument("--card", required=True, help="model card markdown, e.g. docs/model-cards/kev-4b.md")
+    ap.add_argument("--private", action="store_true")
+    ap.add_argument("--tag", help="create this Hub tag on the uploaded commit (versioned release, e.g. v0.2)")
+    ap.add_argument("--revision", help="upload to this branch instead of main (created if missing); for candidates that must not replace the released weights")
+    a = ap.parse_args()
+
+    base, run_name = read_meta(a.run).base, os.path.basename(a.run.rstrip("/"))
+    api = HfApi()
+    api.create_repo(a.repo, repo_type="model", exist_ok=True, private=a.private)
+
+    with tempfile.TemporaryDirectory() as tmp:
+        for f in FILES:
+            src = f"{a.run}/{f}"
+            if os.path.exists(src): shutil.copy(src, tmp)
+            else: print(f"skip {f} (not found)")
+        # runs before task_type was set saved null; the Hub warns about it and PEFT treats both the same for a bare backbone
+        cfg_path = f"{tmp}/adapter_config.json"; cfg = read_json(cfg_path)
+        if not cfg.get("task_type"): cfg["task_type"] = "FEATURE_EXTRACTION"; write_json(cfg_path, cfg)
+        if os.path.exists(f"runs/logs/train_{run_name}.log"):   # standalone runs keep their log there (see .gitignore)
+            shutil.copy(f"runs/logs/train_{run_name}.log", f"{tmp}/train.log")
+        # research trials: runs/<study>/<trial>/checkpoint -> ship the trial's result, provenance and training log too
+        trial = os.path.dirname(a.run.rstrip("/")) if run_name == "checkpoint" else None
+        if trial:
+            run_name = os.path.relpath(trial, "runs")
+            for f in ("result.json", "provenance.json", "train.log", "training_config.json", "training_metrics.json"):
+                for src in (f"{trial}/{f}", f"{a.run}/{f}"):
+                    if os.path.exists(src): shutil.copy(src, f"{tmp}/{f}"); break
+
+        # the card's prose names the Hub repo and trial itself; only the frontmatter is filled from the checkpoint
+        card = re.sub(r"^base_model: .*$", f"base_model: {base}", Path(a.card).read_text(encoding="utf-8"), flags=re.M)
+        if "base_model_relation:" not in card: card = card.replace(f"base_model: {base}", f"base_model: {base}\nbase_model_relation: adapter")
+        Path(tmp, "README.md").write_text(card, encoding="utf-8")
+
+        ev = read_json(f"{tmp}/eval.json") if os.path.exists(f"{tmp}/eval.json") else {}
+        acc = ev.get("accuracy_calibration", {}).get("ALL", {})
+        if os.path.exists(f"{tmp}/result.json"):
+            clean = read_json(f"{tmp}/result.json").get("clean", {})   # research trials; other result files (kev-finetune runs) just skip the figures
+            acc = {"acc": clean.get("acc", float("nan")), "ece": clean.get("ece", float("nan"))}
+        msg = a.message or f"Upload {run_name} (base {base}; acc {acc.get('acc', float('nan')):.3f}, ECE {acc.get('ece', float('nan')):.3f})"
+        if a.revision: api.create_branch(a.repo, branch=a.revision, repo_type="model", exist_ok=True)
+        info = api.upload_folder(folder_path=tmp, repo_id=a.repo, repo_type="model", commit_message=msg, revision=a.revision)
+        print(info)
+        if a.tag:
+            api.create_tag(a.repo, tag=a.tag, repo_type="model", tag_message=msg, exist_ok=False, revision=a.revision)
+            print(f"tagged {a.repo}@{a.tag}")
+
+
+if __name__ == "__main__":
+    main()

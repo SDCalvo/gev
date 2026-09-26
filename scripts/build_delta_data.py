@@ -14,9 +14,9 @@ import argparse, sys
 from collections import Counter
 from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]; sys.path.insert(0, str(ROOT))
-from systemone.composition import canonical, check_group, generate as compose, sample_trees   # noqa: E402
-from systemone.contrastive import FAMILIES, generate as contrast                              # noqa: E402
-from systemone.suite import digest, read_jsonl, semantic_hash, write_json, write_jsonl        # noqa: E402
+from gev.composition import canonical, check_group, generate as compose, sample_trees   # noqa: E402
+from gev.contrastive import FAMILIES, generate as contrast                              # noqa: E402
+from gev.suite import digest, read_jsonl, semantic_hash, write_json, write_jsonl        # noqa: E402
 
 HELD_OUT_FAMILIES = ("deadline", "authorization")
 

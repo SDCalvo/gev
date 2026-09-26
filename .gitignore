@@ -24,3 +24,15 @@ runs/*/*/*
 !runs/*/*/report.json
 evals/public-pool-2k/train.jsonl
 evals/v8-data/train.jsonl
+# generated data files are rebuilt by scripts/build_*.py; manifests with sha256 stay tracked
+evals/delta-v2/train.jsonl
+evals/dates-v2/*.jsonl
+evals/delta-v3/
+evals/v8-data/train.jsonl
+runs/e4b-pilot*/
+runs/sweep/
+runs/mini-*/
+runs/smoke*/
+runs/headonly-*/
+runs/e4b-v7-attempt1-crashed/
+runs/logs/

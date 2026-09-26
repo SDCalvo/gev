@@ -4,8 +4,8 @@ Run: uv run --extra serve python -m pytest tests/test_unit.py -q
 import math
 import pytest
 import torch
-from systemone.api import SystemOneRequest, choice_confidence, render, score_confidence, to_answers, to_record
-from systemone.model import SPECIAL, branch_mask, encode, user_tokens
+from gev.api import SystemOneRequest, choice_confidence, render, score_confidence, to_answers, to_record
+from gev.model import SPECIAL, branch_mask, encode, user_tokens
 
 
 def test_render_flattens_structured_content():
@@ -84,7 +84,7 @@ def test_branch_mask_rule():
 
 @pytest.fixture(scope="module")
 def tok():
-    from systemone.model import load_tokenizer
+    from gev.model import load_tokenizer
     return load_tokenizer("google/gemma-4-E4B")
 
 
@@ -110,8 +110,8 @@ def test_encode_positions_restart_per_branch(tok):
 
 def test_load_records_jsonl(tmp_path):
     """The fine-tuning input format from the README: API-shaped requests with a label per question, one per line."""
-    from systemone.data import load_records, materialize
-    from systemone.suite import write_jsonl
+    from gev.data import load_records, materialize
+    from gev.suite import write_jsonl
     rows = [{"state": {"subject": "Charged twice", "body": "Two charges for order 4411."},
              "questions": {"team": {"type": "choice", "instructions": "Which team?", "criteria": {"billing": "Payments", "shipping": None}, "label": "billing"},
                            "angry": {"type": "noul", "instructions": "Is the customer angry?", "label": False},
@@ -130,9 +130,9 @@ def test_soft_targets_and_date_facts():
     """Night-2 additions: a question with a soft target materializes to a normalized vector aligned with its keys, survives
     option permutation, and trains with cross-entropy against the target; date_facts writes one sentence per date pair."""
     import random, torch
-    from systemone.api import date_facts, with_date_facts
-    from systemone.data import augment, materialize
-    from systemone.train import question_loss
+    from gev.api import date_facts, with_date_facts
+    from gev.data import augment, materialize
+    from gev.train import question_loss
     req = {"state": "policy text", "questions": {"q": {"type": "choice", "instructions": "Which?", "criteria": {"a": None, "b": None, "c": None}, "label": "a",
                                                         "target": {"a": 1, "b": 1, "c": 1}, "src": "t"}}}
     rec = materialize(req)
@@ -146,10 +146,10 @@ def test_soft_targets_and_date_facts():
 
 
 def test_checkpoint_meta_round_trip_and_defaults(tmp_path):
-    """head.pt has one schema (systemone.checkpoint.Meta): old files get the same defaults everywhere, unknown keys survive a
-    read-modify-write, and LoadOptions.from_env is the only place the SYSTEMONE_* variables are read."""
+    """head.pt has one schema (gev.checkpoint.Meta): old files get the same defaults everywhere, unknown keys survive a
+    read-modify-write, and LoadOptions.from_env is the only place the GEV_* variables are read."""
     import torch
-    from systemone.checkpoint import LoadOptions, Meta, read_meta, write_meta
+    from gev.checkpoint import LoadOptions, Meta, read_meta, write_meta
     old = {"head": {"w": torch.zeros(1)}, "base": "Qwen/Qwen2.5-0.5B", "lora": 16, "args": {"lr": 1}, "suite_sha256": "abc"}
     m = Meta.from_dict(old)
     assert (m.head_dim, m.option_isolation, m.temperature, m.holdout, m.weights_dtype) == (256, False, 1.0, [], "fp32")
@@ -158,20 +158,20 @@ def test_checkpoint_meta_round_trip_and_defaults(tmp_path):
     write_meta(tmp_path, m); back = read_meta(tmp_path)
     assert back.temperature == 2.3 and back.extra["args"] == {"lr": 1} and back.extra["temperature_fit"] == {"n": 10} and back.lora == 16
     assert LoadOptions.from_env({}) == LoadOptions()
-    opts = LoadOptions.from_env({"SYSTEMONE_DTYPE": "bf16", "SYSTEMONE_MERGE": "0", "SYSTEMONE_ATTN": "sdpa", "SYSTEMONE_TEMPERATURE": "1.0", "SYSTEMONE_LORA_SCALE": "0.5"})
+    opts = LoadOptions.from_env({"GEV_DTYPE": "bf16", "GEV_MERGE": "0", "GEV_ATTN": "sdpa", "GEV_TEMPERATURE": "1.0", "GEV_LORA_SCALE": "0.5"})
     assert opts == LoadOptions(dtype=torch.bfloat16, merge=False, attn="sdpa", lora_scale=0.5, temperature=1.0)
-    assert LoadOptions.from_env({"SYSTEMONE_DTYPE": "fp32"}).dtype is torch.float32   # explicit fp32 survives, so systemone.serve's bf16 default can be declined
-    assert LoadOptions.from_env({}).backend is None and LoadOptions.from_env({"SYSTEMONE_BACKEND": "torch"}).backend == "torch"
+    assert LoadOptions.from_env({"GEV_DTYPE": "fp32"}).dtype is torch.float32   # explicit fp32 survives, so gev.serve's bf16 default can be declined
+    assert LoadOptions.from_env({}).backend is None and LoadOptions.from_env({"GEV_BACKEND": "torch"}).backend == "torch"
     with pytest.raises(ValueError):
-        LoadOptions.from_env({"SYSTEMONE_BACKEND": "mlx"})
-    with pytest.raises(ValueError, match="SYSTEMONE_BACKEND"):
-        LoadOptions.from_env({"SYSTEMONE_BACKEND": "metal"})
+        LoadOptions.from_env({"GEV_BACKEND": "mlx"})
+    with pytest.raises(ValueError, match="GEV_BACKEND"):
+        LoadOptions.from_env({"GEV_BACKEND": "metal"})
 
 
 def test_head_temperature_scales_logits_at_eval_only():
     """The pointer head divides logits by its temperature in eval mode only; argmax is unchanged; training sees T=1."""
     import torch
-    from systemone.model import PointerHead
+    from gev.model import PointerHead
     torch.manual_seed(0); head = PointerHead(16, dp=8); hd, ho = torch.randn(16), torch.randn(3, 16)
     head.train(); raw_train = head(hd, ho)
     head.eval(); raw = head(hd, ho); head.temperature = 2.0; cal = head(hd, ho)
@@ -184,7 +184,7 @@ def test_permute_bounds_n_perm(n_perm, code, monkeypatch):
     """Each option order is a forward pass: 0 divided by nothing and unbounded counts ran forever (#30, @53Abdeali)."""
     from types import SimpleNamespace
     from fastapi.testclient import TestClient
-    from systemone import serve
+    from gev import serve
     answer = lambda req: {"answers": {"q": {"probabilities": {"a": 0.75, "b": 0.25}, "choice": "a"}}, "latency_ms": 1.0}
     monkeypatch.setattr(serve, "server", lambda: SimpleNamespace(answer=answer))
     body = {"request": {"state": "s", "questions": {"q": {"type": "choice", "instructions": "Pick", "criteria": {"a": None, "b": None}}}}, "question": "q", "n_perm": n_perm}
@@ -195,16 +195,16 @@ def test_permute_bounds_n_perm(n_perm, code, monkeypatch):
 
 
 def test_rows_per_pass_is_a_token_budget():
-    from systemone.model import rows_per_pass
+    from gev.model import rows_per_pass
     assert rows_per_pass([[0] * 30] * 5, prefix_len=270) == 16384 // 300     # a short state: every question of a normal request batches
     assert rows_per_pass([[0] * 20] * 64, prefix_len=4802) == 3            # a long state: a few cache copies per pass
     assert rows_per_pass([[0] * 8192], prefix_len=8192) == 1               # a maximal row still runs
 
 
 def test_bearer_auth_and_request_id(monkeypatch):
-    """SYSTEMONE_API_KEY (systemone.serve.API_KEY) gates /v1/*; every response carries the request id the TypeSafe clients read."""
+    """GEV_API_KEY (gev.serve.API_KEY) gates /v1/*; every response carries the request id the TypeSafe clients read."""
     from fastapi.testclient import TestClient
-    from systemone import serve
+    from gev import serve
     with TestClient(serve.app) as client:
         assert client.get("/openapi.json").headers["x-typesafe-request-id"]
         monkeypatch.setattr(serve, "API_KEY", "secret")
@@ -214,7 +214,7 @@ def test_bearer_auth_and_request_id(monkeypatch):
 
 
 def test_option_isolation_mask_rule():
-    from systemone.model import branch_mask_batch, OPT_NONE, OPT_DECIDE
+    from gev.model import branch_mask_batch, OPT_NONE, OPT_DECIDE
     seg = [0, 0, 1, 1, 1, 1, 1, 1, 1]           # state x2, then q: instr x2, option0 x2, option1 x2, decide
     opt = [OPT_NONE, OPT_NONE, OPT_NONE, OPT_NONE, 0, 0, 1, 1, OPT_DECIDE]
     m = branch_mask_batch([seg], "cpu", opts=[opt])[0, 0] == 0

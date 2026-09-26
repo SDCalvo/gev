@@ -10,8 +10,8 @@ from pathlib import Path
 import torch
 ROOT = Path(__file__).resolve().parents[1]; sys.path.insert(0, str(ROOT))
 from transformers import AutoModelForCausalLM, AutoTokenizer   # noqa: E402
-from systemone.data import materialize                         # noqa: E402
-from systemone.suite import load_split                         # noqa: E402
+from gev.data import materialize                         # noqa: E402
+from gev.suite import load_split                         # noqa: E402
 
 LETTERS = "ABCDEFGH"
 

@@ -9,12 +9,12 @@ is what a training run would see. Use the numbers to size a run before starting 
 import argparse, statistics, time
 from pathlib import Path
 import torch
-from systemone.checkpoint import Meta  # noqa: F401  (import check)
-from systemone.data import materialize
-from systemone.device import allocated_bytes, default_device, empty_cache, sync
-from systemone.model import DecisionModel, load_tokenizer, training_context
-from systemone.suite import load_split
-from systemone.train import question_loss
+from gev.checkpoint import Meta  # noqa: F401  (import check)
+from gev.data import materialize
+from gev.device import allocated_bytes, default_device, empty_cache, sync
+from gev.model import DecisionModel, load_tokenizer, training_context
+from gev.suite import load_split
+from gev.train import question_loss
 
 
 def main():

@@ -6,7 +6,7 @@ import httpx, pytest
 
 pytestmark = pytest.mark.server
 
-BASE = os.environ.get("SYSTEMONE_BASE_URL", "http://127.0.0.1:8008")
+BASE = os.environ.get("GEV_BASE_URL", "http://127.0.0.1:8008")
 
 DEPARTMENT = {"returns": "Exchanges, refunds, wrong or damaged items", "shipping": "Delivery status, delays, lost packages", "billing": "Charges, invoices, payment problems"}
 
@@ -90,7 +90,7 @@ def test_packed_equals_separate():
 def test_sdk_client():
     typesafe_sdk = pytest.importorskip("typesafe_sdk")
     from typesafe_sdk import Choice, Noul, Score, TypeSafeClient
-    with TypeSafeClient(api_key="local", base_url=BASE, model="kev-latest") as client:
+    with TypeSafeClient(api_key="local", base_url=BASE, model="gev-latest") as client:
         resp = client.system_one(state={"document": "I was charged twice. Please fix this ASAP."},
                                  questions={"billing": Noul(instructions="Is this ticket about billing?"),
                                             "tone": Choice(instructions="What is the customer's tone?", criteria={"calm": None, "frustrated": None, "angry": None}),
@@ -105,9 +105,9 @@ def test_sdk_models():
     """models.list() parses only when every card carries name, description and release_date."""
     pytest.importorskip("typesafe_sdk")
     from typesafe_sdk import TypeSafeClient
-    with TypeSafeClient(api_key="local", base_url=BASE, model="kev-latest") as client:
+    with TypeSafeClient(api_key="local", base_url=BASE, model="gev-latest") as client:
         cards = client.models.list().models
-    assert {"kev-latest", "jev-latest"} <= {c.name for c in cards}   # jev-latest is the SDK's default model
+    assert {"gev-latest", "jev-latest"} <= {c.name for c in cards}   # jev-latest is the SDK's default model
     assert all(c.description and c.release_date for c in cards)
 
 
@@ -117,7 +117,7 @@ def test_sdk_async_client():
     from typesafe_sdk import AsyncTypeSafeClient, Noul
 
     async def go():
-        async with AsyncTypeSafeClient(api_key="local", base_url=BASE, model="kev-latest") as client:
+        async with AsyncTypeSafeClient(api_key="local", base_url=BASE, model="gev-latest") as client:
             return await client.system_one(state="I was charged twice.", questions={"billing": Noul(instructions="Is this about billing?")})
 
     assert 0 <= asyncio.run(go()).nouls["billing"].noul <= 1

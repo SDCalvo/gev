@@ -1,20 +1,20 @@
 """Fit one temperature on a checkpoint's in-distribution development rows and write it into head.pt, so every loader
-(systemone.serve, systemone.benchmark, the Space, third-party harnesses) serves calibrated probabilities by default. It also reports
+(gev.serve, gev.benchmark, the Space, third-party harnesses) serves calibrated probabilities by default. It also reports
 an out-of-fold, group-disjoint cross-validated calibration estimate with bootstrap intervals, so the in-sample fit can
 be checked against held-out records; the value written is always the full-development fit.
 
     uv run python scripts/calibrate_checkpoint.py --run runs/night2-9b-du/00-trial-0/checkpoint --rows runs/night2-9b-du/00-trial-0/development/rows.json [--transfer runs/.../transfer/rows.json]
 
 Fitting on the development partition only (never on transfer or test); the optional --transfer rows are reported, not fitted.
-Argmax never changes; accuracy is identical before and after. SYSTEMONE_TEMPERATURE=1.0 restores raw logits at load time.
+Argmax never changes; accuracy is identical before and after. GEV_TEMPERATURE=1.0 restores raw logits at load time.
 """
 import argparse, sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from systemone.metrics import TEMPERATURE_FIT as FIT, TEMPERATURE_FIT_METHOD, cross_validated_temperature, fit_temperature, metrics  # noqa: E402
-from systemone.checkpoint import read_meta, write_meta  # noqa: E402
-from systemone.suite import read_json  # noqa: E402
+from gev.metrics import TEMPERATURE_FIT as FIT, TEMPERATURE_FIT_METHOD, cross_validated_temperature, fit_temperature, metrics  # noqa: E402
+from gev.checkpoint import read_meta, write_meta  # noqa: E402
+from gev.suite import read_json  # noqa: E402
 
 
 def main():

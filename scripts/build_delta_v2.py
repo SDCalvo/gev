@@ -14,10 +14,10 @@ from collections import Counter
 from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]; sys.path.insert(0, str(ROOT))
 from datasets import load_dataset                                                            # noqa: E402
-from systemone.composition import canonical, check_group, generate as compose, sample_trees   # noqa: E402
-from systemone.contrastive import FAMILIES                                                    # noqa: E402
-from systemone.data import ALL_REPOS, ALL_SOURCES, build                                      # noqa: E402
-from systemone.suite import digest, read_jsonl, write_json, write_jsonl                       # noqa: E402
+from gev.composition import canonical, check_group, generate as compose, sample_trees   # noqa: E402
+from gev.contrastive import FAMILIES                                                    # noqa: E402
+from gev.data import ALL_REPOS, ALL_SOURCES, build                                      # noqa: E402
+from gev.suite import digest, read_jsonl, write_json, write_jsonl                       # noqa: E402
 sys.path.insert(0, str(ROOT / "scripts")); from build_delta_data import legacy, HELD_OUT_FAMILIES   # noqa: E402
 
 

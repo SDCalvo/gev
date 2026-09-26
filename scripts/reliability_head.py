@@ -13,9 +13,9 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from systemone.checkpoint import read_meta  # noqa: E402
-from systemone.metrics import area_under_risk_coverage, cluster_resamples, coverage_at_error, scored_rows, served_at  # noqa: E402
-from systemone.suite import read_json, write_json  # noqa: E402
+from gev.checkpoint import read_meta  # noqa: E402
+from gev.metrics import area_under_risk_coverage, cluster_resamples, coverage_at_error, scored_rows, served_at  # noqa: E402
+from gev.suite import read_json, write_json  # noqa: E402
 
 TYPES = ("choice", "noul", "score")
 

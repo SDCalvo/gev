@@ -1,9 +1,9 @@
 """Training records for the 2026-09-20 overnight deltas (PLAN.md, "Tonight's autoresearch"). Three files under evals/night2/,
-each in the --data JSONL format (systemone.data.load_records), plus a manifest with hashes. Frozen: rerunning must reproduce the bytes.
+each in the --data JSONL format (gev.data.load_records), plus a manifest with hashes. Frozen: rerunning must reproduce the bytes.
 
   dates.jsonl       date-bearing policy families (trainable ones; `deadline` stays held out) rendered three ways at random:
                     plain (as decision-v7), with a relational day-count sentence that names the roles ("The return request was
-                    submitted 23 days after the purchase."), or with a `date_facts` field identical to what systemone.api.with_date_facts
+                    submitted 23 days after the purchase."), or with a `date_facts` field identical to what gev.api.with_date_facts
                     produces at serving time. Teaches the model to consume a stated day count and to bind a generic date fact to
                     the policy's roles (issue #8).
   unknowable.jsonl  contrastive records with the deciding evidence sentence removed, soft target = uniform over the options, plus
@@ -18,10 +18,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from systemone import contrastive                              # noqa: E402
-from systemone.api import date_facts, question_keys, render    # noqa: E402
-from systemone.suite import digest, load_split, write_json     # noqa: E402
-from systemone.transfer_v9 import unknowable                   # noqa: E402
+from gev import contrastive                              # noqa: E402
+from gev.api import date_facts, question_keys, render    # noqa: E402
+from gev.suite import digest, load_split, write_json     # noqa: E402
+from gev.transfer_v9 import unknowable                   # noqa: E402
 
 import os
 OUT = ROOT / os.environ.get("DATES_OUT", "evals/night2")

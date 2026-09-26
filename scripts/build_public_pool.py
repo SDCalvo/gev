@@ -11,8 +11,8 @@ import argparse, sys
 from collections import Counter
 from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]; sys.path.insert(0, str(ROOT))
-from systemone.data import ALL_REPOS, ALL_SOURCES, build          # noqa: E402
-from systemone.suite import digest, read_manifest, write_json, write_jsonl   # noqa: E402
+from gev.data import ALL_REPOS, ALL_SOURCES, build          # noqa: E402
+from gev.suite import digest, read_manifest, write_json, write_jsonl   # noqa: E402
 
 PUBLIC = ("agnews", "amazon", "banking77", "boolq", "dbpedia14", "imdb", "mnli", "sst5", "trec", "yelp")
 

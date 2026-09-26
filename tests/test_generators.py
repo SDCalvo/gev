@@ -1,10 +1,10 @@
-"""The programmatic data generators: contrastive policy pairs (systemone.contrastive), compositional rule records (systemone.composition)
-and the v3 suite builder's grouping (systemone.study_v3). No weights, no network.
+"""The programmatic data generators: contrastive policy pairs (gev.contrastive), compositional rule records (gev.composition)
+No weights, no network.
 Run: uv run python -m pytest tests/test_generators.py -q
 """
 import pytest
 
-from systemone.contrastive import generate, paired_flip
+from gev.contrastive import generate, paired_flip
 
 
 def test_rendered_pairs_change_one_sentence_not_order():
@@ -29,7 +29,7 @@ def test_pair_metric_refuses_missing_sibling():
 
 def test_compositional_truth_tables_and_unknowns():
     from itertools import product
-    from systemone.composition import evaluate_rule
+    from gev.composition import evaluate_rule
     atoms = [{"kind": "flag", "fields": [k], "threshold": 0} for k in ("a", "b", "c")]
     for a, b, c in product((True, False), repeat=3):
         facts = dict(a=a, b=b, c=c)
@@ -45,12 +45,12 @@ def test_compositional_truth_tables_and_unknowns():
     ("ge", 10, 10, True), ("eq", 10, 11, False), ("range", 10, 20, True), ("range", 10, 21, False),
 ])
 def test_rule_boundary_labels(kind, threshold, value, expected):
-    from systemone.composition import atom_value
+    from gev.composition import atom_value
     assert atom_value({"kind": kind, "threshold": threshold, "fields": ["x"]}, {"x": value}) == expected
 
 def test_compositional_pairs_validate_and_keep_invariance():
-    from systemone.composition import SHAPES, TRAIN_SHAPES, DEV_SHAPES, TEST_SHAPES, check_group, generate as compose
-    from systemone.benchmark import labels, prediction_rows
+    from gev.composition import SHAPES, TRAIN_SHAPES, DEV_SHAPES, TEST_SHAPES, check_group, generate as compose
+    from gev.benchmark import labels, prediction_rows
     assert not set(TRAIN_SHAPES) & (set(DEV_SHAPES) | set(TEST_SHAPES))
     records = compose(4, "test", tuple(SHAPES))
     rows = []
@@ -70,7 +70,7 @@ def test_compositional_pairs_validate_and_keep_invariance():
         check_group(records[:4])
 
 def test_date_and_entity_atoms():
-    from systemone.composition import atom_value
+    from gev.composition import atom_value
     a = {"kind": "elapsed", "fields": ["start", "end"], "threshold": 2}
     assert atom_value(a, {"start": "2028-02-28", "end": "2028-03-01"}) is True
     assert atom_value(a, {"start": "2028-02-28", "end": "2028-03-02"}) is False
@@ -80,7 +80,7 @@ def test_date_and_entity_atoms():
     assert atom_value(a, {"signer": "Mira"}) is None
 
 def test_random_rule_structures_exclude_heldout_and_cover_negation():
-    from systemone.composition import SHAPES, DEV_SHAPES, TEST_SHAPES, canonical, push_negation, sample_trees, generate as compose, check_group
+    from gev.composition import SHAPES, DEV_SHAPES, TEST_SHAPES, canonical, push_negation, sample_trees, generate as compose, check_group
     assert canonical(("or", ("not", 0), ("and", 1, 2))) == canonical(SHAPES["held_or_not"])       # order/numbering-independent
     assert canonical(("not", ("and", 0, 1))) != canonical(("or", ("not", 0), ("not", 1)))
     assert canonical(push_negation(("not", ("and", 0, 1)))) == canonical(("or", ("not", 0), ("not", 1)))   # De Morgan
@@ -94,8 +94,8 @@ def test_random_rule_structures_exclude_heldout_and_cover_negation():
 
 def test_ordinal_threshold_families_are_balanced_minimal_pairs():
     import collections
-    from systemone.contrastive import ORDINAL_FAMILIES, generate
-    from systemone.data import materialize
+    from gev.contrastive import ORDINAL_FAMILIES, generate
+    from gev.data import materialize
     recs, rep = generate(30, "t", families=list(ORDINAL_FAMILIES))
     assert all(v["pairs"] == 30 for v in rep.values())
     for a, b in zip(recs[::2], recs[1::2]):

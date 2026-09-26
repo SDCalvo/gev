@@ -19,9 +19,9 @@ def smoke_run():
 
 def test_merged_load_matches_unmerged_exactly_in_fp32(smoke_run):
     import torch
-    from systemone.checkpoint import LoadOptions, load
-    from systemone.data import materialize
-    from systemone.suite import load_split
+    from gev.checkpoint import LoadOptions, load
+    from gev.data import materialize
+    from gev.suite import load_split
     recs = [materialize(r) for r in load_split("evals/smoke-v1", "development")[:3]]
     tok, a = load(smoke_run, "cpu", LoadOptions(merge=False)); _, b = load(smoke_run, "cpu", LoadOptions(merge=True))
     with torch.no_grad():
@@ -31,9 +31,9 @@ def test_merged_load_matches_unmerged_exactly_in_fp32(smoke_run):
 
 def test_prefix_cache_matches_full_pass(smoke_run):
     import torch
-    from systemone.checkpoint import load
-    from systemone.data import materialize
-    from systemone.suite import load_split
+    from gev.checkpoint import load
+    from gev.data import materialize
+    from gev.suite import load_split
     tok, m = load(smoke_run, "cpu")
     recs = [materialize(r) for r in load_split("evals/smoke-v1", "development")[:3]]
     for r in recs:
@@ -50,12 +50,12 @@ def test_prefix_cache_matches_full_pass(smoke_run):
 
 def test_shape_bucket_padding_is_exact_in_fp32(smoke_run):
     import torch
-    from systemone.checkpoint import load
-    from systemone.data import materialize
-    from systemone.suite import load_split
+    from gev.checkpoint import load
+    from gev.data import materialize
+    from gev.suite import load_split
     tok, m = load(smoke_run, "cpu")
     recs = [materialize(r) for r in load_split("evals/smoke-v1", "development")[:3]]
-    from systemone.model import branch_mask_batch
+    from gev.model import branch_mask_batch
     for r in recs:
         enc = m.encode(tok, r); L = len(enc["ids"]); padded = -(-L // 64) * 64
         with torch.no_grad():
@@ -67,8 +67,8 @@ def test_shape_bucket_padding_is_exact_in_fp32(smoke_run):
 def test_train_path_drops_records_that_exceed_the_context():
     """Issue #5: training without --suite built records straight from the datasets and the strict encoder aborted on the
     first long passage. The on-the-fly path now applies the same context filter that suite freezing applies."""
-    from systemone.data import materialize
-    from systemone.model import fits, load_tokenizer
+    from gev.data import materialize
+    from gev.model import fits, load_tokenizer
     tok = load_tokenizer("Qwen/Qwen2.5-0.5B")
     short = {"state": "s " * 10, "questions": {"q": {"type": "noul", "instructions": "i", "label": True, "src": "t"}}, "_meta": {"id": "a", "source": "t"}}
     long = {**short, "state": "word " * 600}
@@ -78,7 +78,7 @@ def test_rows_match_packed():
     """The row form (state + one branch per causal row) must reproduce the packed block-causal form on an attention-only
     backbone: each row holds exactly the tokens its question may attend to, at the same positions."""
     import torch
-    from systemone.model import DecisionModel, load_tokenizer, rows_of
+    from gev.model import DecisionModel, load_tokenizer, rows_of
     tok = load_tokenizer("Qwen/Qwen2.5-0.5B"); m = DecisionModel("Qwen/Qwen2.5-0.5B", tok, "cpu").eval()
     rec = {"state": "Order 4411 arrived two weeks late and the box was crushed. Two charges appear on the card.",
            "questions": [{"instr": "Is there a billing problem?", "options": ["yes", "no"], "label": 0},
@@ -99,10 +99,10 @@ def test_row_batching_and_packed_fallback_do_not_change_answers(smoke_run, monke
     one row per pass against the default, and the forced row form (full pass, prefix miss and prefix hit) against the packed
     pass, on many questions."""
     import torch
-    from systemone import model as M
-    from systemone.checkpoint import load
-    from systemone.data import materialize
-    from systemone.suite import load_split
+    from gev import model as M
+    from gev.checkpoint import load
+    from gev.data import materialize
+    from gev.suite import load_split
     tok, m = load(smoke_run, "cpu")
     base = materialize(load_split("evals/smoke-v1", "development")[0])
     rec = {**base, "questions": base["questions"] * 5}                  # 5x the questions: several ROW_BATCH chunks
@@ -124,7 +124,7 @@ def test_hybrid_rows_isolation_and_prefix():
     """Qwen3.5 (Gated DeltaNet + attention): the row form isolates questions exactly, and the serving prefix path
     (state once, cache replicated per question) reproduces it. Uses the 0.8B base; slow reference kernels on CPU."""
     import torch
-    from systemone.model import DecisionModel, load_tokenizer
+    from gev.model import DecisionModel, load_tokenizer
     tok = load_tokenizer("Qwen/Qwen3.5-0.8B-Base"); m = DecisionModel("Qwen/Qwen3.5-0.8B-Base", tok, "cpu").eval()
     assert m.hybrid
     rec = {"state": "Order 4411 arrived late and the box was crushed. Two charges appear on the card.",
@@ -136,7 +136,7 @@ def test_hybrid_rows_isolation_and_prefix():
         alone = [m.probs(m.encode(tok, {"state": rec["state"], "questions": [q]}))[0] for q in rec["questions"]]
         cached, prefix = m.probs_and_prefix(enc)
         again = m.probs_with_prefix(enc, prefix); again2 = m.probs_with_prefix(enc, prefix)
-        import systemone.model as M
+        import gev.model as M
         saved, M.rows_per_pass = M.rows_per_pass, lambda rows, prefix_len=0, budget=0: 1   # one row per pass: same answers, bounded memory
         try: chunked = m.probs_with_prefix(enc, prefix)
         finally: M.rows_per_pass = saved
@@ -148,12 +148,12 @@ def test_init_from_warm_start_and_compatibility_checks(tmp_path):
     Two tiny runs on Qwen2.5-0.5B: the second warm-starts from the first and must start with identical head weights."""
     import subprocess, sys, json, torch
     env = {**os.environ, "OMP_NUM_THREADS": "2"}
-    base = [sys.executable, "-m", "systemone.train", "--n_per_source", "3", "--epochs", "1", "--accum", "1", "--batch", "1", "--device", "cpu", "--lr", "1e-12", "--base", "Qwen/Qwen2.5-0.5B"]
+    base = [sys.executable, "-m", "gev.train", "--n_per_source", "3", "--epochs", "1", "--accum", "1", "--batch", "1", "--device", "cpu", "--lr", "1e-12", "--base", "Qwen/Qwen2.5-0.5B"]
     subprocess.run(base + ["--out", str(tmp_path / "a")], check=True, capture_output=True, env=env)
     r = subprocess.run(base + ["--out", str(tmp_path / "b"), "--init_from", str(tmp_path / "a")], check=True, capture_output=True, text=True, env=env)
     assert "delta: warm start" in r.stdout
-    from systemone.checkpoint import read_meta
-    from systemone.suite import read_json
+    from gev.checkpoint import read_meta
+    from gev.suite import read_json
     ha, hb = read_meta(tmp_path / "a"), read_meta(tmp_path / "b")
     assert all((ha.head[k] - hb.head[k]).abs().max() < 1e-6 for k in ha.head), "a warm start at a negligible lr must keep the source head"
     assert hb.extra["init_source"]["adapter_sha256"] and read_json(tmp_path / "b/training_config.json")["init_source"]["resolved"] == str(tmp_path / "a")
