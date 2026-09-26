@@ -39,6 +39,11 @@ def main():
         # runs before task_type was set saved null; the Hub warns about it and PEFT treats both the same for a bare backbone
         cfg_path = f"{tmp}/adapter_config.json"; cfg = read_json(cfg_path)
         if not cfg.get("task_type"): cfg["task_type"] = "FEATURE_EXTRACTION"; write_json(cfg_path, cfg)
+        for split in ("development", "transfer"):                # the evaluation reports that back the model card's numbers
+            if os.path.exists(f"{a.run}/{split}/report.json"):
+                os.makedirs(f"{tmp}/{split}", exist_ok=True); shutil.copy(f"{a.run}/{split}/report.json", f"{tmp}/{split}/report.json")
+        for f in ("training_config.json", "training_metrics.json"):
+            if os.path.exists(f"{a.run}/{f}"): shutil.copy(f"{a.run}/{f}", tmp)
         if os.path.exists(f"runs/logs/train_{run_name}.log"):   # standalone runs keep their log there (see .gitignore)
             shutil.copy(f"runs/logs/train_{run_name}.log", f"{tmp}/train.log")
         # research trials: runs/<study>/<trial>/checkpoint -> ship the trial's result, provenance and training log too
