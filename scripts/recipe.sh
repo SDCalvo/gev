@@ -6,6 +6,7 @@
 #   DATES_OUT=evals/dates-v2 DATES_SEED=dates-v2-20260925 DATES_N=300 UNKNOWABLE_N=25 ASSERTION_N=400 scripts/build_date_data.py
 #   scripts/build_delta_v2.py --out evals/delta-v2                                            (once; MCQ mix, paraphrase, rules)
 #   scripts/recipe.sh [BASE] [OUT]        BASE defaults to google/gemma-4-E4B-it, OUT to runs/gev-e4b
+#   READOUT_LAYERS=10,20 scripts/recipe.sh google/gemma-4-E2B-it runs/gev-e2b     (E2B has 35 layers: read 10, 20 and the last)
 #
 # Stages (markers in runs/logs/pipeline.status, logs in runs/logs/<out>-*.log):
 #   base   1 epoch on decision-v7 + public-pool-2k + delta-v1 + delta-v2 (36k records): LoRA r=16 lr 1e-4, pointer head
@@ -24,7 +25,7 @@ stage() { echo "$(date '+%F %T') $*" | tee -a "$STATUS"; }
 fail() { stage "FAILED: $*"; exit 1; }
 REV=$($PY -c "import json,sys; print(json.load(open('evals/v7/decision-v7/manifest.json'))['base_revisions'].get('$BASE',''))")
 [ -n "$REV" ] || REV=$($PY -c "from huggingface_hub import HfApi; print(HfApi().model_info('$BASE').sha)")
-FLAGS="--base $BASE --base_revision $REV --weights_dtype bf16 --head_norm 1 --readout delimiter --readout_layers 12,24 --brier_w 0.5 --accum 8"
+FLAGS="--base $BASE --base_revision $REV --weights_dtype bf16 --head_norm 1 --readout delimiter --readout_layers  --brier_w 0.5 --accum 8"
 [ -f evals/v8-data/train.jsonl ] || { mkdir -p evals/v8-data; cat evals/public-pool-2k/train.jsonl evals/delta-v1/train.jsonl > evals/v8-data/train.jsonl; }
 TRAIN="$PY -m gev.train $FLAGS --data evals/v8-data/train.jsonl --suite evals/v7/decision-v7 --replay 12576 --epochs 1 --lr 1e-4 --head_lr 2e-4 --head_warmup_steps 400 --save_every 100 --out $OUT"
 
