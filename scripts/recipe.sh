@@ -25,7 +25,7 @@ stage() { echo "$(date '+%F %T') $*" | tee -a "$STATUS"; }
 fail() { stage "FAILED: $*"; exit 1; }
 REV=$($PY -c "import json,sys; print(json.load(open('evals/v7/decision-v7/manifest.json'))['base_revisions'].get('$BASE',''))")
 [ -n "$REV" ] || REV=$($PY -c "from huggingface_hub import HfApi; print(HfApi().model_info('$BASE').sha)")
-FLAGS="--base $BASE --base_revision $REV --weights_dtype bf16 --head_norm 1 --readout delimiter --readout_layers  --brier_w 0.5 --accum 8"
+FLAGS="--base $BASE --base_revision $REV --weights_dtype bf16 --head_norm 1 --readout delimiter --readout_layers ${READOUT_LAYERS:-12,24} --brier_w 0.5 --accum 8"
 [ -f evals/v8-data/train.jsonl ] || { mkdir -p evals/v8-data; cat evals/public-pool-2k/train.jsonl evals/delta-v1/train.jsonl > evals/v8-data/train.jsonl; }
 TRAIN="$PY -m gev.train $FLAGS --data evals/v8-data/train.jsonl --suite evals/v7/decision-v7 --replay 12576 --epochs 1 --lr 1e-4 --head_lr 2e-4 --head_warmup_steps 400 --save_every 100 --out $OUT"
 
