@@ -98,3 +98,23 @@ Record-clustered bootstrap (1,000 resamples) over the same questions, `gev.compa
 | it-layers | 0.757 | 0.825 | 0.738 | 0.800 | 0.063 | 0.364 |
 
 Not in the table: LoRA rank 32 diverged (non-finite loss), `--perm_kl 0.5` ran at 3 s/record and was stopped. Inference-time options measured on e4b-v7: date preprocessing neutral, 3-way rotation averaging +0.2 points in domain.
+## Coverage round (selective prediction)
+
+Target: the share of decisions automatable at a 5% error budget. A temperature is monotone and cannot change it; these
+levers can. All on transfer-v4 development, calibrated unless noted.
+
+| model / lever | transfer acc | transfer Brier | transfer cov@5% | dev acc | dev cov@5% | cost |
+|---|---|---|---|---|---|---|
+| e4b-v9 (released) | 0.800 | 0.271 | 0.50 | 0.863 | 0.77 | 1× |
+| + reliability re-ranker (logistic on p_max, margin, entropy, K, type; fitted on the calibration partition) | 0.800 | | 0.52 [CI −0.33, +0.05], AURC worse | 0.863 | 0.76 | 1× |
+| + 3-way rotation averaging | 0.799 | 0.273 raw (0.279) | 0.50 | | | 3× |
+| e4b-v9-delta-v3 (unknowable-heavy soft-target delta on top of e4b-v9, lr 2e-5) | 0.794 | 0.272 | **0.54** | 0.865 | 0.78 | 1× |
+| e4b-v9-s1 (second seed of the v9 recipe) | 0.762 | 0.301 | 0.56 | 0.866 | 0.77 | 1× |
+| ensemble e4b-v9 + e4b-v9-s1 (tempered probabilities averaged) | 0.788 | 0.280 | **0.56** | 0.873 | 0.78 | 2× |
+| ensemble + e4b-v9-delta-v3 | 0.785 | 0.275 | 0.55 | 0.866 | 0.77 | 3× |
+
+Two lessons. First, seed variance out of domain is about 4 points (0.800 vs 0.762 for the same recipe), so single-run
+differences under that are noise; the paired bootstraps in the table above are the comparisons to trust. Second, the
+only lever that raised coverage without a cost in accuracy or inference is more soft-target data: teaching the model
+when *not* to be confident. Re-ranking the confidences of one model finds no signal its probabilities do not already
+carry. For automation at a fixed error budget, e4b-v9-delta-v3 is the better single model; for accuracy, e4b-v9.
