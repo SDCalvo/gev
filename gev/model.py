@@ -15,7 +15,9 @@ from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer, Dynami
 # without it (agnews topic linearly decodable from the <decide> state: 0.45 without, 0.61 with; a pointer head on frozen
 # final-layer features 0.39 -> 0.61). The token count is unchanged and user text cannot produce it (user_tokens).
 DELIMITERS = {"gemma": ["<bos>", "<unused1>", "<unused2>", "<unused3>", "<unused4>"],
-              "qwen": ["<|fim_prefix|>", "<|fim_middle|>", "<|box_start|>", "<|box_end|>", "<|fim_suffix|>"]}
+              "qwen": ["<|fim_prefix|>", "<|fim_middle|>", "<|box_start|>", "<|box_end|>", "<|fim_suffix|>"],
+              # SmolLM2: pretrained code-corpus markers (single tokens, ids 3-7); <|im_start|> (bos) as the state marker
+              "smollm": ["<|im_start|>", "<repo_name>", "<file_sep>", "<filename>", "<gh_stars>"]}
 SPECIAL = DELIMITERS["gemma"]   # the default backbone's set; encode() resolves the right one per tokenizer (delimiters)
 
 
@@ -110,7 +112,8 @@ def _forbidden_re(special_tokens):
     """Every literal the tokenizer turns into a control token: its own special tokens (Gemma 4: <eos>, <turn|>, <|turn>,
     <mask>, ...), Qwen-style <|name|> markers and the <unusedN> delimiter names (Gemma's tokenizer already splits those
     in plain text, but the rewrite keeps the guarantee independent of tokenizer behaviour)."""
-    literal = "|".join(re.escape(t) for t in sorted(special_tokens, key=len, reverse=True))
+    names = set(special_tokens) | {t for names in DELIMITERS.values() for t in names}   # delimiter names of every backbone: SmolLM2's are not "special" to its tokenizer yet tokenize as single tokens from plain text
+    literal = "|".join(re.escape(t) for t in sorted(names, key=len, reverse=True))
     return re.compile(r"<\|([A-Za-z0-9_]+)\|>|<(unused\d+)>" + (rf"|({literal})" if literal else ""))
 
 
