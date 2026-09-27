@@ -171,7 +171,9 @@ def main():
         records = load_split(a.suite, split, allow_test=a.allow_test)
         manifest = read_manifest(a.suite)
         heldout = manifest["holdout_sources"]; source_hash = digest(Path(a.suite) / "manifest.json")
-        context, skip_overlong = manifest.get("context", CONTEXT), bool(manifest.get("eval_only"))
+        # overlong records (a tokenizer less efficient than the suite's pinned bases, e.g. SmolLM2 on Banking77's 77 options)
+        # are counted in coverage.rejected_records instead of aborting the run; training skips them the same way
+        context, skip_overlong = manifest.get("context", CONTEXT), True
     if a.limit:
         records = records[: a.limit]
     if a.date_facts:
