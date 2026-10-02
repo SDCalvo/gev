@@ -13,6 +13,88 @@ always matches the schema. It speaks TypeSafe's `/v1/systemone` API, like [Jev](
 
 ## Results
 
+### JevBench public benchmark (2026-10-02)
+
+The current release, **Gev-E4B v1**, scored **72.3% (167/231)** on all public
+[JevBench](https://github.com/fstandhartinger/jevbench) decisions. Gev was evaluated through its native
+`/v1/systemone` API; the other models' scores come from JevBench's published outcomes on the **same 231 items**.
+
+| Model | Easy | Standard | Hard | Public accuracy |
+|---|---|---|---|---|
+| Jev 1.13.0 (TypeSafe AI) | 48/48 | 71/72 | 81/111 | 86.6% (200/231) |
+| SemIf (Qwen3.5-4B) | 48/48 | 71/72 | 68/111 | 81.0% (187/231) |
+| system-one-open (Gemma 4 E2B) | 48/48 | 67/72 | 54/111 | 73.2% (169/231) |
+| **Gev-E4B v1 (current release)** | **48/48** | **67/72** | **52/111** | **72.3% (167/231)** |
+| Kev-4B (research preview) | 48/48 | 64/72 | 41/111 | 66.2% (153/231) |
+
+Gev beats Kev-4B by **6.1 percentage points** and places **24th among 49 compared rows** on public accuracy,
+including Gev and 48 published models. All **231/231** responses passed strict schema/distribution validation.
+Temporal/numeric reasoning (**0/15**) and long policies (**5/19**) are the current release's weakest hard families.
+
+This is a **public accuracy comparison**. The official JevBench composite also requires private items and measures
+calibration, speed and cost. The comparison covers models with complete published item-level outcomes in the
+pinned source artifact; newer entrants may be absent. Ties share a rank.
+[Method, calibration, latency, limitations and supporting data](docs/jevbench.md).
+
+<details>
+<summary>Full comparison: all 49 models on the same public JevBench items</summary>
+
+| Public accuracy rank | Model | Public accuracy | Easy | Standard | Hard |
+|---|---|---|---|---|---|
+| 1 | DeepSeek V4.1 Flash (thinking default) | 97.8% (226/231) | 48/48 | 71/72 | 107/111 |
+| 2 | GPT-5.6 Luna (low reasoning effort) | 97.4% (225/231) | 48/48 | 70/72 | 107/111 |
+| 3 | OpenJev (thinking, BF16) | 88.7% (205/231) | 48/48 | 72/72 | 85/111 |
+| 4 | djev (thinking) | 87.4% (202/231) | 46/48 | 71/72 | 85/111 |
+| 5 | Gemini 3.1 Flash-Lite | 87.0% (201/231) | 48/48 | 71/72 | 82/111 |
+| 5 | reflex-27b (Qwen3.8-27B) | 87.0% (201/231) | 48/48 | 69/72 | 84/111 |
+| 7 | Jev 1.13.0 (TypeSafe AI) | 86.6% (200/231) | 48/48 | 71/72 | 81/111 |
+| 7 | SimpleJev Qwen3.8-27B | 86.6% (200/231) | 48/48 | 70/72 | 82/111 |
+| 9 | LitJev (Qwen3.8-27B) | 86.1% (199/231) | 48/48 | 71/72 | 80/111 |
+| 10 | Winnow-12B Q8 | 85.7% (198/231) | 48/48 | 69/72 | 81/111 |
+| 11 | openjev-sglang (Qwen3.6-35B-A3B on SGLang) | 85.3% (197/231) | 48/48 | 68/72 | 81/111 |
+| 12 | djev (Maisa, diffusion-gemma) | 84.0% (194/231) | 48/48 | 71/72 | 75/111 |
+| 13 | decider-35b-a3b (Mapika) | 83.1% (192/231) | 48/48 | 70/72 | 74/111 |
+| 14 | OpenJev (DiffusionGemma 26B-A4B NVFP4, razorback16) | 81.8% (189/231) | 48/48 | 70/72 | 71/111 |
+| 15 | SimpleJev Qwen3.6-35B-A3B | 81.4% (188/231) | 48/48 | 67/72 | 73/111 |
+| 16 | SemIf, formerly OpenJev (Qwen3.5-4B, TheoLeeCJ) | 81.0% (187/231) | 48/48 | 71/72 | 68/111 |
+| 17 | jqv (Qwen3-32B zero-shot) | 80.1% (185/231) | 48/48 | 69/72 | 68/111 |
+| 18 | Bespoke Nimble 9B (Bespoke Labs) | 79.7% (184/231) | 48/48 | 67/72 | 69/111 |
+| 19 | reflex 4B (kshetrajna12) | 79.2% (183/231) | 48/48 | 68/72 | 67/111 |
+| 20 | Open-Jev 9B (Zefan Cai) | 77.5% (179/231) | 48/48 | 65/72 | 66/111 |
+| 21 | jev-local (Qwen3.5-9B) | 74.9% (173/231) | 48/48 | 60/72 | 65/111 |
+| 22 | open-alternative-jev (Qwen3.5-4B, IkerMoel) | 74.0% (171/231) | 48/48 | 60/72 | 63/111 |
+| 23 | system-one-open (Gemma 4 E2B LoRA on an L4) | 73.2% (169/231) | 48/48 | 67/72 | 54/111 |
+| 24 | **Gev-E4B v1 (current release)** | 72.3% (167/231) | 48/48 | 67/72 | 52/111 |
+| 25 | system-one (Qwen3-8B, Sean Goedecke) | 71.9% (166/231) | 48/48 | 64/72 | 54/111 |
+| 26 | kev 8B (research preview) | 71.4% (165/231) | 48/48 | 67/72 | 50/111 |
+| 27 | decider-2b (Mapika) | 71.0% (164/231) | 48/48 | 61/72 | 55/111 |
+| 28 | ZeroEntropy zerank-2 | 70.1% (162/231) | 48/48 | 57/72 | 57/111 |
+| 29 | Qwen3-Reranker-4B | 68.0% (157/231) | 48/48 | 54/72 | 55/111 |
+| 30 | decision-machine-1 (milliseconds.ai) | 67.5% (156/231) | 48/48 | 54/72 | 54/111 |
+| 31 | kev 0.6B (research preview) | 66.7% (154/231) | 48/48 | 58/72 | 48/111 |
+| 32 | kev 4B (research preview) | 66.2% (153/231) | 48/48 | 64/72 | 41/111 |
+| 33 | Open-Jev 2B (Zefan Cai) | 64.5% (149/231) | 48/48 | 55/72 | 46/111 |
+| 34 | jeff (Logan Markewich, GLiFormer 400M) | 62.8% (145/231) | 48/48 | 54/72 | 43/111 |
+| 35 | smalljev semantic-v9 | 60.6% (140/231) | 47/48 | 49/72 | 44/111 |
+| 36 | Laya (Convai Innovations, ModernBERT-large 421M) | 58.4% (135/231) | 46/48 | 50/72 | 39/111 |
+| 37 | GLiNER2 (Fastino, gliner2.5-base) | 58.0% (134/231) | 47/48 | 46/72 | 41/111 |
+| 38 | openJev Verdict 1.4 | 57.6% (133/231) | 42/48 | 50/72 | 41/111 |
+| 39 | GLiNER2 large (Fastino) | 56.7% (131/231) | 48/48 | 42/72 | 41/111 |
+| 40 | openJev Verdict (heman10x, ModernBERT-base 151M) | 55.4% (128/231) | 41/48 | 45/72 | 42/111 |
+| 41 | OpenDecision (ModernBERT-large zero-shot) | 53.2% (123/231) | 42/48 | 43/72 | 38/111 |
+| 42 | open-jev-deberta-v3-large (local CPU) | 52.4% (121/231) | 48/48 | 31/72 | 42/111 |
+| 43 | kev 0.5B | 49.4% (114/231) | 46/48 | 35/72 | 33/111 |
+| 44 | GLiNER2.5 multi (Fastino, 287M) | 48.9% (113/231) | 44/48 | 32/72 | 37/111 |
+| 45 | GLiNER2.5 small (Fastino, 74M) | 45.9% (106/231) | 41/48 | 30/72 | 35/111 |
+| 46 | BAAI bge-reranker-v2-m3 | 39.4% (91/231) | 23/48 | 26/72 | 42/111 |
+| 47 | Mixedbread mxbai-rerank-base-v2 | 37.2% (86/231) | 22/48 | 24/72 | 40/111 |
+| 48 | Alibaba GTE Reranker ModernBERT-base | 33.8% (78/231) | 17/48 | 26/72 | 35/111 |
+| 49 | Certo v1 (AltSlate Labs) | 31.6% (73/231) | 12/48 | 24/72 | 37/111 |
+
+</details>
+
+### Development and transfer evaluation
+
 Development = the same ten public datasets and generated policy families as training, different records. Transfer =
 six datasets and rule structures never trained on. Gev's numbers are calibrated (one temperature fitted on development
 rows; the answers are unchanged); Kev-4B's are from its model card, Jev's from Kev's evaluation of it.
@@ -28,18 +110,6 @@ rows; the answers are unchanged); Kev-4B's are from its model card, Jev's from K
 
 Every run, per source, with paired bootstraps: [`docs/results.md`](docs/results.md). Model card:
 [`docs/model-cards/gev-e4b.md`](docs/model-cards/gev-e4b.md).
-
-### JevBench public evaluation (2026-10-02)
-
-The released **Gev-E4B v1** scored **72.3% (167/231)** on all public
-[JevBench](https://github.com/fstandhartinger/jevbench) items: easy **48/48**, standard **67/72**, hard **52/111**.
-Every response passed strict schema/distribution validation. On the same items, Jev 1.13.0 scored **86.6%**,
-SemIf 4B **81.0%**, and Kev-4B (research preview) **66.2%**, using JevBench's published outcomes for those models.
-Gev ranked **24th among 49 compared rows** on public accuracy, including Gev and 48 published models.
-
-This is a public accuracy comparison; an official JevBench composite score requires private items and also measures
-calibration, speed and cost. Temporal/numeric reasoning (0/15) and long policies (5/19) are the current release's
-weakest hard families. [Full comparison, method, limitations and evidence](docs/jevbench.md).
 
 ## How it works
 
