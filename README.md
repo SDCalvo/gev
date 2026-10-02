@@ -29,6 +29,18 @@ rows; the answers are unchanged); Kev-4B's are from its model card, Jev's from K
 Every run, per source, with paired bootstraps: [`docs/results.md`](docs/results.md). Model card:
 [`docs/model-cards/gev-e4b.md`](docs/model-cards/gev-e4b.md).
 
+### JevBench public evaluation (2026-10-02)
+
+The released **Gev-E4B v1** scored **72.3% (167/231)** on all public
+[JevBench](https://github.com/fstandhartinger/jevbench) items: easy **48/48**, standard **67/72**, hard **52/111**.
+Every response passed strict schema/distribution validation. On the same items, Jev 1.13.0 scored **86.6%**,
+SemIf 4B **81.0%**, and Kev-4B (research preview) **66.2%**, using JevBench's published outcomes for those models.
+Gev ranked **24th among 49 compared rows** on public accuracy, including Gev and 48 published models.
+
+This is a public accuracy comparison; an official JevBench composite score requires private items and also measures
+calibration, speed and cost. Temporal/numeric reasoning (0/15) and long policies (5/19) are the current release's
+weakest hard families. [Full comparison, method, limitations and evidence](docs/jevbench.md).
+
 ## How it works
 
 Gev is Kev's recipe with the backbone swapped for Gemma 4, which needed five changes to work at all. Each one was

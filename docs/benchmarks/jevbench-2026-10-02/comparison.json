@@ -1,0 +1,966 @@
+{
+  "scope": "Same 231 public decisions; accuracy only; not an official JevBench composite ranking",
+  "published_outcome_revision": "v1.3.0",
+  "official_context_revision": "v1.4.2.2",
+  "published_outcomes_source": "https://github.com/fstandhartinger/jevbench/blob/bb05a335bc809e61b20c0f745d25499a82b326fc/results/v1.2/jevbench-v1.2-per-task.json",
+  "n_published_models_compared": 48,
+  "gev_public_accuracy_rank": 24,
+  "bootstrap": "10,000 paired decision resamples, seed 20261002; descriptive interval; no multiple-comparison adjustment",
+  "tiers": {
+    "easy": 48,
+    "standard": 72,
+    "hard": 111
+  },
+  "systems": [
+    {
+      "key": "deepseek-flash",
+      "display": "DeepSeek V4.1 Flash (thinking default)",
+      "n": 231,
+      "correct": 226,
+      "accuracy": 0.9783549783549783,
+      "per_tier_correct": {
+        "easy": 48,
+        "standard": 71,
+        "hard": 107
+      },
+      "gev_accuracy_difference": -0.2554112554112554,
+      "paired_bootstrap_95_ci": [
+        -0.31601731601731603,
+        -0.19913419913419914
+      ],
+      "official_rank_for_context_only": 85,
+      "public_accuracy_rank": 1
+    },
+    {
+      "key": "gpt-5.6-luna",
+      "display": "GPT-5.6 Luna (low reasoning effort)",
+      "n": 231,
+      "correct": 225,
+      "accuracy": 0.974025974025974,
+      "per_tier_correct": {
+        "easy": 48,
+        "standard": 70,
+        "hard": 107
+      },
+      "gev_accuracy_difference": -0.2510822510822511,
+      "paired_bootstrap_95_ci": [
+        -0.3116883116883117,
+        -0.19047619047619047
+      ],
+      "official_rank_for_context_only": 63,
+      "public_accuracy_rank": 2
+    },
+    {
+      "key": "openjev-thinking",
+      "display": "OpenJev (thinking, BF16)",
+      "n": 231,
+      "correct": 205,
+      "accuracy": 0.8874458874458875,
+      "per_tier_correct": {
+        "easy": 48,
+        "standard": 72,
+        "hard": 85
+      },
+      "gev_accuracy_difference": -0.1645021645021645,
+      "paired_bootstrap_95_ci": [
+        -0.21645021645021645,
+        -0.11255411255411256
+      ],
+      "official_rank_for_context_only": 70,
+      "public_accuracy_rank": 3
+    },
+    {
+      "key": "djev-thinking",
+      "display": "djev (thinking)",
+      "n": 231,
+      "correct": 202,
+      "accuracy": 0.8744588744588745,
+      "per_tier_correct": {
+        "easy": 46,
+        "standard": 71,
+        "hard": 85
+      },
+      "gev_accuracy_difference": -0.15151515151515152,
+      "paired_bootstrap_95_ci": [
+        -0.21645021645021645,
+        -0.08658008658008658
+      ],
+      "official_rank_for_context_only": 68,
+      "public_accuracy_rank": 4
+    },
+    {
+      "key": "gemini-3.1-flash-lite",
+      "display": "Gemini 3.1 Flash-Lite",
+      "n": 231,
+      "correct": 201,
+      "accuracy": 0.8701298701298701,
+      "per_tier_correct": {
+        "easy": 48,
+        "standard": 71,
+        "hard": 82
+      },
+      "gev_accuracy_difference": -0.1471861471861472,
+      "paired_bootstrap_95_ci": [
+        -0.19913419913419914,
+        -0.09956709956709957
+      ],
+      "official_rank_for_context_only": 72,
+      "public_accuracy_rank": 5
+    },
+    {
+      "key": "reflex-27b",
+      "display": "reflex-27b (Qwen3.8-27B)",
+      "n": 231,
+      "correct": 201,
+      "accuracy": 0.8701298701298701,
+      "per_tier_correct": {
+        "easy": 48,
+        "standard": 69,
+        "hard": 84
+      },
+      "gev_accuracy_difference": -0.1471861471861472,
+      "paired_bootstrap_95_ci": [
+        -0.20346320346320346,
+        -0.09523809523809523
+      ],
+      "official_rank_for_context_only": 66,
+      "public_accuracy_rank": 5
+    },
+    {
+      "key": "jev-1.13.0",
+      "display": "Jev 1.13.0 (TypeSafe AI)",
+      "n": 231,
+      "correct": 200,
+      "accuracy": 0.8658008658008658,
+      "per_tier_correct": {
+        "easy": 48,
+        "standard": 71,
+        "hard": 81
+      },
+      "gev_accuracy_difference": -0.14285714285714285,
+      "paired_bootstrap_95_ci": [
+        -0.19047619047619047,
+        -0.09523809523809523
+      ],
+      "official_rank_for_context_only": 4,
+      "public_accuracy_rank": 7
+    },
+    {
+      "key": "simplejev-qwen3.8-27b",
+      "display": "SimpleJev Qwen3.8-27B",
+      "n": 231,
+      "correct": 200,
+      "accuracy": 0.8658008658008658,
+      "per_tier_correct": {
+        "easy": 48,
+        "standard": 70,
+        "hard": 82
+      },
+      "gev_accuracy_difference": -0.14285714285714285,
+      "paired_bootstrap_95_ci": [
+        -0.19480519480519481,
+        -0.09090909090909091
+      ],
+      "official_rank_for_context_only": 34,
+      "public_accuracy_rank": 7
+    },
+    {
+      "key": "litjev",
+      "display": "LitJev (Qwen3.8-27B)",
+      "n": 231,
+      "correct": 199,
+      "accuracy": 0.8614718614718615,
+      "per_tier_correct": {
+        "easy": 48,
+        "standard": 71,
+        "hard": 80
+      },
+      "gev_accuracy_difference": -0.13852813852813853,
+      "paired_bootstrap_95_ci": [
+        -0.19047619047619047,
+        -0.08658008658008658
+      ],
+      "official_rank_for_context_only": 59,
+      "public_accuracy_rank": 9
+    },
+    {
+      "key": "winnow-12b",
+      "display": "Winnow-12B Q8",
+      "n": 231,
+      "correct": 198,
+      "accuracy": 0.8571428571428571,
+      "per_tier_correct": {
+        "easy": 48,
+        "standard": 69,
+        "hard": 81
+      },
+      "gev_accuracy_difference": -0.1341991341991342,
+      "paired_bootstrap_95_ci": [
+        -0.19047619047619047,
+        -0.08225108225108226
+      ],
+      "official_rank_for_context_only": 8,
+      "public_accuracy_rank": 10
+    },
+    {
+      "key": "openjev-sglang",
+      "display": "openjev-sglang (Qwen3.6-35B-A3B on SGLang)",
+      "n": 231,
+      "correct": 197,
+      "accuracy": 0.8528138528138528,
+      "per_tier_correct": {
+        "easy": 48,
+        "standard": 68,
+        "hard": 81
+      },
+      "gev_accuracy_difference": -0.12987012987012986,
+      "paired_bootstrap_95_ci": [
+        -0.18181818181818182,
+        -0.07792207792207792
+      ],
+      "official_rank_for_context_only": 47,
+      "public_accuracy_rank": 11
+    },
+    {
+      "key": "djev",
+      "display": "djev (Maisa, diffusion-gemma)",
+      "n": 231,
+      "correct": 194,
+      "accuracy": 0.8398268398268398,
+      "per_tier_correct": {
+        "easy": 48,
+        "standard": 71,
+        "hard": 75
+      },
+      "gev_accuracy_difference": -0.11688311688311688,
+      "paired_bootstrap_95_ci": [
+        -0.16883116883116883,
+        -0.06926406926406926
+      ],
+      "official_rank_for_context_only": 10,
+      "public_accuracy_rank": 12
+    },
+    {
+      "key": "decider-35b-a3b",
+      "display": "decider-35b-a3b (Mapika)",
+      "n": 231,
+      "correct": 192,
+      "accuracy": 0.8311688311688312,
+      "per_tier_correct": {
+        "easy": 48,
+        "standard": 70,
+        "hard": 74
+      },
+      "gev_accuracy_difference": -0.10822510822510822,
+      "paired_bootstrap_95_ci": [
+        -0.16017316017316016,
+        -0.05627705627705628
+      ],
+      "official_rank_for_context_only": 21,
+      "public_accuracy_rank": 13
+    },
+    {
+      "key": "openjev-razorback16",
+      "display": "OpenJev (DiffusionGemma 26B-A4B NVFP4, razorback16)",
+      "n": 231,
+      "correct": 189,
+      "accuracy": 0.8181818181818182,
+      "per_tier_correct": {
+        "easy": 48,
+        "standard": 70,
+        "hard": 71
+      },
+      "gev_accuracy_difference": -0.09523809523809523,
+      "paired_bootstrap_95_ci": [
+        -0.1471861471861472,
+        -0.047619047619047616
+      ],
+      "official_rank_for_context_only": 29,
+      "public_accuracy_rank": 14
+    },
+    {
+      "key": "simplejev-qwen3.6-35b-a3b",
+      "display": "SimpleJev Qwen3.6-35B-A3B",
+      "n": 231,
+      "correct": 188,
+      "accuracy": 0.8138528138528138,
+      "per_tier_correct": {
+        "easy": 48,
+        "standard": 67,
+        "hard": 73
+      },
+      "gev_accuracy_difference": -0.09090909090909091,
+      "paired_bootstrap_95_ci": [
+        -0.13852813852813853,
+        -0.047619047619047616
+      ],
+      "official_rank_for_context_only": 54,
+      "public_accuracy_rank": 15
+    },
+    {
+      "key": "semif-qwen3.5-4b",
+      "display": "SemIf, formerly OpenJev (Qwen3.5-4B, TheoLeeCJ)",
+      "n": 231,
+      "correct": 187,
+      "accuracy": 0.8095238095238095,
+      "per_tier_correct": {
+        "easy": 48,
+        "standard": 71,
+        "hard": 68
+      },
+      "gev_accuracy_difference": -0.08658008658008658,
+      "paired_bootstrap_95_ci": [
+        -0.13852813852813853,
+        -0.03463203463203463
+      ],
+      "official_rank_for_context_only": 13,
+      "public_accuracy_rank": 16
+    },
+    {
+      "key": "jqv",
+      "display": "jqv (Qwen3-32B zero-shot)",
+      "n": 231,
+      "correct": 185,
+      "accuracy": 0.8008658008658008,
+      "per_tier_correct": {
+        "easy": 48,
+        "standard": 69,
+        "hard": 68
+      },
+      "gev_accuracy_difference": -0.07792207792207792,
+      "paired_bootstrap_95_ci": [
+        -0.12554112554112554,
+        -0.030303030303030304
+      ],
+      "official_rank_for_context_only": 19,
+      "public_accuracy_rank": 17
+    },
+    {
+      "key": "nimble-9b",
+      "display": "Bespoke Nimble 9B (Bespoke Labs)",
+      "n": 231,
+      "correct": 184,
+      "accuracy": 0.7965367965367965,
+      "per_tier_correct": {
+        "easy": 48,
+        "standard": 67,
+        "hard": 69
+      },
+      "gev_accuracy_difference": -0.0735930735930736,
+      "paired_bootstrap_95_ci": [
+        -0.12554112554112554,
+        -0.021645021645021644
+      ],
+      "official_rank_for_context_only": 62,
+      "public_accuracy_rank": 18
+    },
+    {
+      "key": "reflex-4b",
+      "display": "reflex 4B (kshetrajna12)",
+      "n": 231,
+      "correct": 183,
+      "accuracy": 0.7922077922077922,
+      "per_tier_correct": {
+        "easy": 48,
+        "standard": 68,
+        "hard": 67
+      },
+      "gev_accuracy_difference": -0.06926406926406926,
+      "paired_bootstrap_95_ci": [
+        -0.11688311688311688,
+        -0.021645021645021644
+      ],
+      "official_rank_for_context_only": 9,
+      "public_accuracy_rank": 19
+    },
+    {
+      "key": "open-jev-zefan-9b",
+      "display": "Open-Jev 9B (Zefan Cai)",
+      "n": 231,
+      "correct": 179,
+      "accuracy": 0.7748917748917749,
+      "per_tier_correct": {
+        "easy": 48,
+        "standard": 65,
+        "hard": 66
+      },
+      "gev_accuracy_difference": -0.05194805194805195,
+      "paired_bootstrap_95_ci": [
+        -0.1038961038961039,
+        0.0
+      ],
+      "official_rank_for_context_only": 77,
+      "public_accuracy_rank": 20
+    },
+    {
+      "key": "jev-local",
+      "display": "jev-local (Qwen3.5-9B)",
+      "n": 231,
+      "correct": 173,
+      "accuracy": 0.7489177489177489,
+      "per_tier_correct": {
+        "easy": 48,
+        "standard": 60,
+        "hard": 65
+      },
+      "gev_accuracy_difference": -0.025974025974025976,
+      "paired_bootstrap_95_ci": [
+        -0.08225108225108226,
+        0.030303030303030304
+      ],
+      "official_rank_for_context_only": 39,
+      "public_accuracy_rank": 21
+    },
+    {
+      "key": "open-alternative-jev",
+      "display": "open-alternative-jev (Qwen3.5-4B, IkerMoel)",
+      "n": 231,
+      "correct": 171,
+      "accuracy": 0.7402597402597403,
+      "per_tier_correct": {
+        "easy": 48,
+        "standard": 60,
+        "hard": 63
+      },
+      "gev_accuracy_difference": -0.017316017316017316,
+      "paired_bootstrap_95_ci": [
+        -0.06926406926406926,
+        0.03463203463203463
+      ],
+      "official_rank_for_context_only": 38,
+      "public_accuracy_rank": 22
+    },
+    {
+      "key": "system-one-open",
+      "display": "system-one-open (Gemma 4 E2B LoRA on an L4)",
+      "n": 231,
+      "correct": 169,
+      "accuracy": 0.7316017316017316,
+      "per_tier_correct": {
+        "easy": 48,
+        "standard": 67,
+        "hard": 54
+      },
+      "gev_accuracy_difference": -0.008658008658008658,
+      "paired_bootstrap_95_ci": [
+        -0.06071428571428562,
+        0.047619047619047616
+      ],
+      "official_rank_for_context_only": 16,
+      "public_accuracy_rank": 23
+    },
+    {
+      "key": "gev-e4b-v1-local",
+      "display": "Gev-E4B v1 (this run)",
+      "n": 231,
+      "correct": 167,
+      "accuracy": 0.7229437229437229,
+      "per_tier_correct": {
+        "easy": 48,
+        "standard": 67,
+        "hard": 52
+      },
+      "public_accuracy_rank": 24
+    },
+    {
+      "key": "system-one-sg",
+      "display": "system-one (Qwen3-8B, Sean Goedecke)",
+      "n": 231,
+      "correct": 166,
+      "accuracy": 0.7186147186147186,
+      "per_tier_correct": {
+        "easy": 48,
+        "standard": 64,
+        "hard": 54
+      },
+      "gev_accuracy_difference": 0.004329004329004329,
+      "paired_bootstrap_95_ci": [
+        -0.047619047619047616,
+        0.05627705627705628
+      ],
+      "official_rank_for_context_only": 57,
+      "public_accuracy_rank": 25
+    },
+    {
+      "key": "kev-8b",
+      "display": "kev 8B (research preview)",
+      "n": 231,
+      "correct": 165,
+      "accuracy": 0.7142857142857143,
+      "per_tier_correct": {
+        "easy": 48,
+        "standard": 67,
+        "hard": 50
+      },
+      "gev_accuracy_difference": 0.008658008658008658,
+      "paired_bootstrap_95_ci": [
+        -0.03463203463203463,
+        0.05194805194805195
+      ],
+      "official_rank_for_context_only": 51,
+      "public_accuracy_rank": 26
+    },
+    {
+      "key": "decider-2b",
+      "display": "decider-2b (Mapika)",
+      "n": 231,
+      "correct": 164,
+      "accuracy": 0.70995670995671,
+      "per_tier_correct": {
+        "easy": 48,
+        "standard": 61,
+        "hard": 55
+      },
+      "gev_accuracy_difference": 0.012987012987012988,
+      "paired_bootstrap_95_ci": [
+        -0.03463203463203463,
+        0.06060606060606061
+      ],
+      "official_rank_for_context_only": 41,
+      "public_accuracy_rank": 27
+    },
+    {
+      "key": "zerank-2",
+      "display": "ZeroEntropy zerank-2",
+      "n": 231,
+      "correct": 162,
+      "accuracy": 0.7012987012987013,
+      "per_tier_correct": {
+        "easy": 48,
+        "standard": 57,
+        "hard": 57
+      },
+      "gev_accuracy_difference": 0.021645021645021644,
+      "paired_bootstrap_95_ci": [
+        -0.03906926406926397,
+        0.08658008658008658
+      ],
+      "official_rank_for_context_only": 24,
+      "public_accuracy_rank": 28
+    },
+    {
+      "key": "qwen3-reranker-4b",
+      "display": "Qwen3-Reranker-4B",
+      "n": 231,
+      "correct": 157,
+      "accuracy": 0.6796536796536796,
+      "per_tier_correct": {
+        "easy": 48,
+        "standard": 54,
+        "hard": 55
+      },
+      "gev_accuracy_difference": 0.04329004329004329,
+      "paired_bootstrap_95_ci": [
+        -0.017316017316017316,
+        0.10822510822510822
+      ],
+      "official_rank_for_context_only": 20,
+      "public_accuracy_rank": 29
+    },
+    {
+      "key": "decision-machine-1",
+      "display": "decision-machine-1 (milliseconds.ai)",
+      "n": 231,
+      "correct": 156,
+      "accuracy": 0.6753246753246753,
+      "per_tier_correct": {
+        "easy": 48,
+        "standard": 54,
+        "hard": 54
+      },
+      "gev_accuracy_difference": 0.047619047619047616,
+      "paired_bootstrap_95_ci": [
+        -0.004329004329004329,
+        0.1038961038961039
+      ],
+      "official_rank_for_context_only": 25,
+      "public_accuracy_rank": 30
+    },
+    {
+      "key": "kev-0.6b",
+      "display": "kev 0.6B (research preview)",
+      "n": 231,
+      "correct": 154,
+      "accuracy": 0.6666666666666666,
+      "per_tier_correct": {
+        "easy": 48,
+        "standard": 58,
+        "hard": 48
+      },
+      "gev_accuracy_difference": 0.05627705627705628,
+      "paired_bootstrap_95_ci": [
+        -0.004329004329004329,
+        0.11688311688311688
+      ],
+      "official_rank_for_context_only": 55,
+      "public_accuracy_rank": 31
+    },
+    {
+      "key": "kev-4b",
+      "display": "kev 4B (research preview)",
+      "n": 231,
+      "correct": 153,
+      "accuracy": 0.6623376623376623,
+      "per_tier_correct": {
+        "easy": 48,
+        "standard": 64,
+        "hard": 41
+      },
+      "gev_accuracy_difference": 0.06060606060606061,
+      "paired_bootstrap_95_ci": [
+        0.017316017316017316,
+        0.10822510822510822
+      ],
+      "official_rank_for_context_only": 30,
+      "public_accuracy_rank": 32
+    },
+    {
+      "key": "open-jev-zefan-2b",
+      "display": "Open-Jev 2B (Zefan Cai)",
+      "n": 231,
+      "correct": 149,
+      "accuracy": 0.645021645021645,
+      "per_tier_correct": {
+        "easy": 48,
+        "standard": 55,
+        "hard": 46
+      },
+      "gev_accuracy_difference": 0.07792207792207792,
+      "paired_bootstrap_95_ci": [
+        0.025974025974025976,
+        0.1341991341991342
+      ],
+      "official_rank_for_context_only": 78,
+      "public_accuracy_rank": 33
+    },
+    {
+      "key": "jeff",
+      "display": "jeff (Logan Markewich, GLiFormer 400M)",
+      "n": 231,
+      "correct": 145,
+      "accuracy": 0.6277056277056277,
+      "per_tier_correct": {
+        "easy": 48,
+        "standard": 54,
+        "hard": 43
+      },
+      "gev_accuracy_difference": 0.09523809523809523,
+      "paired_bootstrap_95_ci": [
+        0.030303030303030304,
+        0.16017316017316016
+      ],
+      "official_rank_for_context_only": 42,
+      "public_accuracy_rank": 34
+    },
+    {
+      "key": "smalljev",
+      "display": "smalljev semantic-v9",
+      "n": 231,
+      "correct": 140,
+      "accuracy": 0.6060606060606061,
+      "per_tier_correct": {
+        "easy": 47,
+        "standard": 49,
+        "hard": 44
+      },
+      "gev_accuracy_difference": 0.11688311688311688,
+      "paired_bootstrap_95_ci": [
+        0.047619047619047616,
+        0.18614718614718614
+      ],
+      "official_rank_for_context_only": 74,
+      "public_accuracy_rank": 35
+    },
+    {
+      "key": "laya",
+      "display": "Laya (Convai Innovations, ModernBERT-large 421M)",
+      "n": 231,
+      "correct": 135,
+      "accuracy": 0.5844155844155844,
+      "per_tier_correct": {
+        "easy": 46,
+        "standard": 50,
+        "hard": 39
+      },
+      "gev_accuracy_difference": 0.13852813852813853,
+      "paired_bootstrap_95_ci": [
+        0.06493506493506493,
+        0.21645021645021645
+      ],
+      "official_rank_for_context_only": 43,
+      "public_accuracy_rank": 36
+    },
+    {
+      "key": "gliner2",
+      "display": "GLiNER2 (Fastino, gliner2.5-base)",
+      "n": 231,
+      "correct": 134,
+      "accuracy": 0.5800865800865801,
+      "per_tier_correct": {
+        "easy": 47,
+        "standard": 46,
+        "hard": 41
+      },
+      "gev_accuracy_difference": 0.14285714285714285,
+      "paired_bootstrap_95_ci": [
+        0.0735930735930736,
+        0.21212121212121213
+      ],
+      "official_rank_for_context_only": 75,
+      "public_accuracy_rank": 37
+    },
+    {
+      "key": "openjev-verdict-1.4",
+      "display": "openJev Verdict 1.4",
+      "n": 231,
+      "correct": 133,
+      "accuracy": 0.5757575757575758,
+      "per_tier_correct": {
+        "easy": 42,
+        "standard": 50,
+        "hard": 41
+      },
+      "gev_accuracy_difference": 0.1471861471861472,
+      "paired_bootstrap_95_ci": [
+        0.07792207792207792,
+        0.21645021645021645
+      ],
+      "official_rank_for_context_only": 60,
+      "public_accuracy_rank": 38
+    },
+    {
+      "key": "gliner2-large",
+      "display": "GLiNER2 large (Fastino)",
+      "n": 231,
+      "correct": 131,
+      "accuracy": 0.5670995670995671,
+      "per_tier_correct": {
+        "easy": 48,
+        "standard": 42,
+        "hard": 41
+      },
+      "gev_accuracy_difference": 0.15584415584415584,
+      "paired_bootstrap_95_ci": [
+        0.09523809523809523,
+        0.22077922077922077
+      ],
+      "official_rank_for_context_only": 69,
+      "public_accuracy_rank": 39
+    },
+    {
+      "key": "openjev-verdict",
+      "display": "openJev Verdict (heman10x, ModernBERT-base 151M)",
+      "n": 231,
+      "correct": 128,
+      "accuracy": 0.5541125541125541,
+      "per_tier_correct": {
+        "easy": 41,
+        "standard": 45,
+        "hard": 42
+      },
+      "gev_accuracy_difference": 0.16883116883116883,
+      "paired_bootstrap_95_ci": [
+        0.09956709956709957,
+        0.24242424242424243
+      ],
+      "official_rank_for_context_only": 64,
+      "public_accuracy_rank": 40
+    },
+    {
+      "key": "opendecision",
+      "display": "OpenDecision (ModernBERT-large zero-shot)",
+      "n": 231,
+      "correct": 123,
+      "accuracy": 0.5324675324675324,
+      "per_tier_correct": {
+        "easy": 42,
+        "standard": 43,
+        "hard": 38
+      },
+      "gev_accuracy_difference": 0.19047619047619047,
+      "paired_bootstrap_95_ci": [
+        0.12121212121212122,
+        0.2597402597402597
+      ],
+      "official_rank_for_context_only": 58,
+      "public_accuracy_rank": 41
+    },
+    {
+      "key": "open-jev-deberta-v3-large",
+      "display": "open-jev-deberta-v3-large (local CPU)",
+      "n": 231,
+      "correct": 121,
+      "accuracy": 0.5238095238095238,
+      "per_tier_correct": {
+        "easy": 48,
+        "standard": 31,
+        "hard": 42
+      },
+      "gev_accuracy_difference": 0.19913419913419914,
+      "paired_bootstrap_95_ci": [
+        0.12554112554112554,
+        0.2727272727272727
+      ],
+      "official_rank_for_context_only": 73,
+      "public_accuracy_rank": 42
+    },
+    {
+      "key": "kev-0.5b",
+      "display": "kev 0.5B",
+      "n": 231,
+      "correct": 114,
+      "accuracy": 0.4935064935064935,
+      "per_tier_correct": {
+        "easy": 46,
+        "standard": 35,
+        "hard": 33
+      },
+      "gev_accuracy_difference": 0.22943722943722944,
+      "paired_bootstrap_95_ci": [
+        0.16017316017316016,
+        0.2987012987012987
+      ],
+      "official_rank_for_context_only": 61,
+      "public_accuracy_rank": 43
+    },
+    {
+      "key": "gliner2.5-multi",
+      "display": "GLiNER2.5 multi (Fastino, 287M)",
+      "n": 231,
+      "correct": 113,
+      "accuracy": 0.48917748917748916,
+      "per_tier_correct": {
+        "easy": 44,
+        "standard": 32,
+        "hard": 37
+      },
+      "gev_accuracy_difference": 0.23376623376623376,
+      "paired_bootstrap_95_ci": [
+        0.15584415584415584,
+        0.3116883116883117
+      ],
+      "official_rank_for_context_only": 79,
+      "public_accuracy_rank": 44
+    },
+    {
+      "key": "gliner2.5-small",
+      "display": "GLiNER2.5 small (Fastino, 74M)",
+      "n": 231,
+      "correct": 106,
+      "accuracy": 0.4588744588744589,
+      "per_tier_correct": {
+        "easy": 41,
+        "standard": 30,
+        "hard": 35
+      },
+      "gev_accuracy_difference": 0.26406926406926406,
+      "paired_bootstrap_95_ci": [
+        0.19047619047619047,
+        0.33766233766233766
+      ],
+      "official_rank_for_context_only": 82,
+      "public_accuracy_rank": 45
+    },
+    {
+      "key": "bge-reranker-v2-m3",
+      "display": "BAAI bge-reranker-v2-m3",
+      "n": 231,
+      "correct": 91,
+      "accuracy": 0.3939393939393939,
+      "per_tier_correct": {
+        "easy": 23,
+        "standard": 26,
+        "hard": 42
+      },
+      "gev_accuracy_difference": 0.329004329004329,
+      "paired_bootstrap_95_ci": [
+        0.24242424242424243,
+        0.4155844155844156
+      ],
+      "official_rank_for_context_only": 88,
+      "public_accuracy_rank": 46
+    },
+    {
+      "key": "mxbai-rerank-base-v2",
+      "display": "Mixedbread mxbai-rerank-base-v2",
+      "n": 231,
+      "correct": 86,
+      "accuracy": 0.3722943722943723,
+      "per_tier_correct": {
+        "easy": 22,
+        "standard": 24,
+        "hard": 40
+      },
+      "gev_accuracy_difference": 0.35064935064935066,
+      "paired_bootstrap_95_ci": [
+        0.2683982683982684,
+        0.4329004329004329
+      ],
+      "official_rank_for_context_only": 87,
+      "public_accuracy_rank": 47
+    },
+    {
+      "key": "gte-reranker-modernbert-base",
+      "display": "Alibaba GTE Reranker ModernBERT-base",
+      "n": 231,
+      "correct": 78,
+      "accuracy": 0.33766233766233766,
+      "per_tier_correct": {
+        "easy": 17,
+        "standard": 26,
+        "hard": 35
+      },
+      "gev_accuracy_difference": 0.3852813852813853,
+      "paired_bootstrap_95_ci": [
+        0.2987012987012987,
+        0.47186147186147187
+      ],
+      "official_rank_for_context_only": 89,
+      "public_accuracy_rank": 48
+    },
+    {
+      "key": "certo",
+      "display": "Certo v1 (AltSlate Labs)",
+      "n": 231,
+      "correct": 73,
+      "accuracy": 0.31601731601731603,
+      "per_tier_correct": {
+        "easy": 12,
+        "standard": 24,
+        "hard": 37
+      },
+      "gev_accuracy_difference": 0.4069264069264069,
+      "paired_bootstrap_95_ci": [
+        0.3203463203463203,
+        0.48917748917748916
+      ],
+      "official_rank_for_context_only": 90,
+      "public_accuracy_rank": 49
+    }
+  ],
+  "skipped": [
+    {
+      "key": "needle-3",
+      "reason": "No measured outcome for every public item"
+    },
+    {
+      "key": "qwen3.8-27b",
+      "reason": "No measured outcome for every public item"
+    },
+    {
+      "key": "needle-3-tools",
+      "reason": "No measured outcome for every public item"
+    },
+    {
+      "key": "classifier-dev-fast",
+      "reason": "Partial or excluded from official model ranking"
+    }
+  ],
+  "limitations": [
+    "Official scores include private original, imported judge, held-out hard and fresh sealed items unavailable here.",
+    "Comparison includes only models with complete published outcomes on these exact public items; newer models may be absent.",
+    "Latency is loopback on this Mac; published latencies include different hardware and network paths.",
+    "Zero route fee excludes local compute and electricity; no hosted cost score or official composite score is inferred.",
+    "The released checkpoint and its development-fitted temperature were fixed before this evaluation; no benchmark tuning."
+  ]
+}

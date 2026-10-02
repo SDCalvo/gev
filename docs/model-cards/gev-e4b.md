@@ -66,6 +66,12 @@ Per source out of domain: QNLI 0.91, SciQ 0.975, TweetEval-offensive 0.75, PAWS 
 `deadline` (date arithmetic) 0.95, held-out rule structures 0.81–0.97. In distribution: Banking77 0.91, DBpedia 0.95,
 TREC 0.94, IMDB 0.94, AG News 0.86, BoolQ 0.86, MNLI 0.85, Yelp 0.71, SST-5 0.58.
 
+On 2026-10-02, this release scored **72.3% (167/231)** on all public JevBench items: 48/48 easy,
+67/72 standard and 52/111 hard, with 231/231 strictly valid responses. JevBench's published outcomes on the same
+items give Jev 1.13.0 86.6%, SemIf 4B 81.0% and Kev-4B (research preview) 66.2%.
+This is a public accuracy comparison, not an official composite score; private items were unavailable.
+[Method, full comparison and evidence](../jevbench.md).
+
 ## How it was built
 
 - **Base**: `google/gemma-4-E4B-it`, the instruction-tuned checkpoint (4.5B effective / 8B total parameters, 42 layers,
@@ -83,6 +89,9 @@ TREC 0.94, IMDB 0.94, AG News 0.86, BoolQ 0.86, MNLI 0.85, Yelp 0.71, SST-5 0.58
 
 ## Known limits
 
+- On JevBench's public hard items, temporal/numeric reasoning scored 0/15 and long policy documents 5/19;
+  hard-tier ECE was 0.202. Strong results on the existing development/transfer suites do not imply strong performance
+  on these harder reasoning tasks.
 - Emotion (noisy labels) 0.55, SST-5 0.58 and Yelp 0.71: fine-grained sentiment is the weakest area.
 - Options past ~500 tokens cannot see the state in the 35 sliding-window layers; very long option lists lose accuracy.
 - Coverage at a 5% error budget (0.50) trails Kev-4B as served (0.57) and Jev (0.70).

@@ -1,0 +1,97 @@
+{
+  "upstream_url": "https://github.com/fstandhartinger/jevbench",
+  "upstream_commit": "bb05a335bc809e61b20c0f745d25499a82b326fc",
+  "gev_commit": "61972f731d989978bfd988495771ac9e0fb29462",
+  "checkpoint": "runs/e4b-v9",
+  "checkpoint_sha256": {
+    "head.pt": "50d197e30a2ebd2f0c5c03450c4a55dd6c65e423766adef219c0142947154a17",
+    "adapter_config.json": "b532cb55dba9c4eae00546583d137aa9ff270db1e8e2ba735ea4019ebb9361b0",
+    "adapter_model.safetensors": "ef7b06a8c8faa3f1b7080a8b3c7edeb9c68ebcd631993f821de26b64833f56e1"
+  },
+  "dataset_hash": "dc3995d8ae1e2fc8e81ce38431add509eb8bb39b85aadfd0c7c32079382dde51",
+  "dataset_files_sha256": {
+    "easy.jsonl": "231df3c2c8e88a1a8c137ebe85de96ba70fabd330849098ac7b3c52c70b7172b",
+    "original.jsonl": "5c2414edb3006b8bfcb70fda433f0f9ca015759433849f8d3104328a1f7c4180",
+    "hard.jsonl": "89e9e6becb33ed88c1de7d42dcc87531b2fb64cfaef4e1986faf7c37b3f80ebb"
+  },
+  "published_outcomes_sha256": "c772b3b85809f483449ec2a6ae0272347371ed5f40f7faff8394ecf4ee22ae7c",
+  "official_context_sha256": "7f39b2f742a69ded7384fb7eb4c54daa9cf67b26e72e25133c6da1f8e49cf570",
+  "hardware": {
+    "platform": "macOS-26.3.1-arm64-arm-64bit",
+    "machine": "arm64",
+    "hw.memsize": "51539607552",
+    "machdep.cpu.brand_string": "Apple M3 Max"
+  },
+  "endpoint": "http://127.0.0.1:8008",
+  "run_manifest": {
+    "adapter": "typesafe",
+    "charged_usd": 0.0,
+    "cost_basis": "zero_route_fee_local_compute_excluded",
+    "dataset_hash": "dc3995d8ae1e2fc8e81ce38431add509eb8bb39b85aadfd0c7c32079382dde51",
+    "delay_s": 0.0,
+    "endpoint": "http://127.0.0.1:8008",
+    "finished_utc": "2026-10-02T17:01:30.949816+00:00",
+    "key_env_used": false,
+    "n_attempted": 231,
+    "n_planned": 231,
+    "price_input_per_m": 0.0,
+    "price_output_per_m": 0.0,
+    "request_options": {},
+    "requested_model": "gev-latest",
+    "resolved_models": [
+      "gev-latest"
+    ],
+    "run_label": "Gev-E4B v1 public JevBench",
+    "started_utc": "2026-10-02T16:58:14.425800+00:00"
+  },
+  "server_models": {
+    "models": [
+      {
+        "name": "gev-latest",
+        "description": "Kev pointer head on google/gemma-4-E4B-it, serving runs/e4b-v9 at temperature 1.41",
+        "release_date": "2026-09-26",
+        "run": "runs/e4b-v9",
+        "base": "google/gemma-4-E4B-it",
+        "lora": 16,
+        "device": "mps",
+        "backend": "torch",
+        "dtype": "bfloat16",
+        "temperature": 1.4142135623730947,
+        "prefix_cache": {
+          "size": 4,
+          "min_state_tokens": 0,
+          "hits": 0,
+          "misses": 231,
+          "cached_states": 4
+        }
+      },
+      {
+        "name": "jev-latest",
+        "description": "Kev pointer head on google/gemma-4-E4B-it, serving runs/e4b-v9 at temperature 1.41",
+        "release_date": "2026-09-26",
+        "run": "runs/e4b-v9",
+        "base": "google/gemma-4-E4B-it",
+        "lora": 16,
+        "device": "mps",
+        "backend": "torch",
+        "dtype": "bfloat16",
+        "temperature": 1.4142135623730947,
+        "prefix_cache": {
+          "size": 4,
+          "min_state_tokens": 0,
+          "hits": 0,
+          "misses": 231,
+          "cached_states": 4
+        }
+      }
+    ]
+  },
+  "verification": {
+    "exact_adapter_request_matches": 231,
+    "rescored_outcome_matches": 231,
+    "state_truncated_count": 0,
+    "max_encoded_request_tokens": 3868,
+    "serve_max_state": 8192,
+    "serve_max_branch": 8192
+  }
+}

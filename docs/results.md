@@ -1,5 +1,10 @@
 # Results
 
+The released Gev-E4B v1 also scored **72.3% (167/231)** on the public JevBench suite on 2026-10-02,
+ahead of Kev-4B's published 66.2% and behind SemIf 4B's 81.0% and Jev 1.13.0's 86.6% on those same items.
+[The JevBench report](jevbench.md) includes the full public comparison, hard-family results, reproduction commands
+and machine-readable evidence. Its 24th-of-49 public accuracy rank is separate from JevBench's official composite ranking.
+
 Every run, on the same frozen partitions: decision-v7 development (in distribution, 1,264 questions) and transfer-v4 development (out of domain: MMLU, Emotion, TweetEval, QNLI, PAWS, SciQ, held-out policy rule structures; 656 questions). Accuracy is unchanged by calibration; Brier, ECE and coverage are reported after the temperature fitted on development rows (`scripts/calibrate_checkpoint.py`). Coverage = the share of decisions automatable at a 5% error budget when accepting by confidence. Kev-4B and Jev numbers are from Kev's model card and its evaluation of Jev.
 
 | run | what | dev acc | dev Brier | dev ECE | dev cov@5% | transfer acc | transfer Brier | transfer ECE | transfer cov@5% | T |
